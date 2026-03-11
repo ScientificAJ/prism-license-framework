@@ -4,7 +4,7 @@ The Prism License Framework Generator is a modular, source-available license gen
 
 PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing a single inflexible license, creators compose a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
 
-The current generator ships with an expanded option library: every factor exposes at least five choices, and the framework now includes additional influence areas such as network reciprocity and compliance governance.
+The current generator ships with an expanded option library: every factor exposes at least five choices, the framework now includes additional influence areas such as network reciprocity and compliance governance, and the UI now includes plain-language clause explanations plus conflict detection warnings for potentially contradictory combinations.
 
 ## What PLF Is
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, Copy, Info, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Info, ShieldCheck } from 'lucide-react';
 
 const LEGAL_TEXT = {
   core: {
@@ -292,6 +292,119 @@ const CATEGORIES = [
 const FACTOR_COUNT = CATEGORIES.length;
 const OPTION_COUNT = CATEGORIES.reduce((sum, category) => sum + category.options.length, 0);
 
+const NONE_SUMMARIES = {
+  attribution: 'No extra attribution duty is added beyond the core and any other active clauses.',
+  commercial: 'Commercial treatment is controlled only by the core grant and other selected modules.',
+  modification: 'Modification rules are left to the core grant and any derivative obligations you choose.',
+  redistribution: 'Redistribution is governed only by the core grant and related downstream clauses.',
+  resale: 'No standalone resale rule is added here.',
+  ai: 'No extra AI-training rule is added here.',
+  branding: 'No standalone branding rule is added here.',
+  hosting: 'No standalone hosted-service rule is added here.',
+  network: 'No extra network reciprocity obligation is added here.',
+  patent: 'No explicit patent term is added here.',
+};
+
+const OPTION_SUMMARIES = {
+  C1: 'A broad baseline that can be narrowed or conditioned by the modules you add.',
+  C2: 'A baseline focused on internal use and internal modification, not open redistribution.',
+  C3: 'A strict inspection-and-viewing baseline with almost no default downstream rights.',
+  C4: 'Best for pilots, evaluations, interoperability checks, and internal prototypes.',
+  C5: 'A community-oriented baseline that defaults to non-commercial sharing and improvement.',
+
+  A: 'Requires normal attribution and license notice retention when the work is shared.',
+  A2: 'Requires attribution to be visible and prominent in public-facing use.',
+  A3: 'Requires a NOTICE file or equivalent attribution appendix to travel with the work.',
+  A4: 'Makes downstream modifiers clearly identify themselves as modifiers.',
+  A5: 'Requires a visible attribution notice when the work is used over a network or SaaS.',
+
+  NC: 'Blocks monetized or commercial use of the work.',
+  MC: 'Allows commercial use, subject to the rest of the selected restrictions.',
+  IC: 'Allows commercial entities to use the work internally, but not resell or expose it outward.',
+  SM: 'Allows commercial use only for small teams or small businesses.',
+  CW: 'Allows the work to be used in paid client services without turning it into a standalone product.',
+
+  M0: 'No one may alter the work or distribute modified versions.',
+  M1: 'People may modify privately, but cannot share those modified versions externally.',
+  M2: 'People may create and distribute modified versions, subject to the rest of the license.',
+  M3: 'Public modifications must be shared as patches rather than as full modified copies.',
+  M4: 'People may build integrations and add-ons, but not ship a modified core.',
+
+  R0: 'The work cannot be redistributed to third parties.',
+  R1: 'Only exact unmodified copies may be shared downstream.',
+  R2: 'Redistribution is allowed, subject to the rest of the license.',
+  R3: 'Redistribution is allowed only when source form is provided.',
+  R4: 'Redistribution is limited to named, tracked, or auditable recipients.',
+
+  SA: 'Modified versions must stay under the exact same PLF variant.',
+  SD: 'Anyone shipping compiled derivatives must also provide editable source.',
+  FD: 'Modified files must say what changed and when.',
+  MN: 'Modified forks must be clearly renamed or relabeled.',
+  OC: 'Downstream modifiers must offer significant changes back to the original licensor.',
+
+  NR: 'No one may sell the work itself.',
+  LR: 'Selling is allowed only when the work is part of something larger or materially transformed.',
+  FR: 'Selling and fee-based distribution are allowed.',
+  CR: 'Only cost-recovery fees are allowed; profit-taking on the work itself is blocked.',
+  BS: 'The work can be sold only as a bundled part of a larger offering.',
+
+  NT: 'Prevents the work from being used to train or evaluate machine-learning systems.',
+  AT: 'AI training is outside the license unless the licensor separately approves it.',
+  OA: 'AI and ML use is openly allowed.',
+  RA: 'AI use is limited to non-commercial research settings.',
+  LA: 'AI use is limited to private or local model work, not public hosted AI services.',
+
+  HM: 'Blocks use in weapons, offensive military systems, or lethal targeting.',
+  NS: 'Blocks surveillance, profiling, and non-consensual biometric monitoring.',
+  HE: 'Blocks use tied to human-rights abuses or civil-rights violations.',
+  DS: 'Blocks disinformation, synthetic manipulation, and deceptive influence campaigns.',
+  BX: 'Blocks biometric monetization or profiling without informed consent.',
+
+  BU: 'Allows truthful factual references to the licensor’s branding.',
+  BN: 'Allows only minimal nominative references for compatibility or origin.',
+  BR: 'Mostly restricts trademark and brand use except for basic origin references.',
+  BP: 'Requires separate written permission for branding use.',
+  WL: 'Prevents downstream parties from white-labeling or disguising the origin.',
+
+  S0: 'Prevents the work from being offered as a hosted service.',
+  S1: 'Allows hosting only for internal company use.',
+  S2: 'Allows public SaaS or hosted-service use.',
+  S3: 'Allows hosted use only for named customers or controlled client environments.',
+  S4: 'Allows managed-service hosting only with separate permission or partnership terms.',
+
+  N1: 'Hosted users must be given a source offer for the service implementation.',
+  N2: 'Operators must disclose material service-side modifications.',
+  N3: 'Hosted deployments must publish clear legal and operator notices for the service.',
+  N4: 'Hosted deployments must show a visible legal banner to end users.',
+  N5: 'Hosted users must be given a reasonable path to export key migration-related data.',
+
+  P0: 'No patent rights are granted.',
+  P1: 'Grants a limited patent license tied to the work and terminates on patent aggression.',
+  P2: 'Grants a broader patent license, but cuts it off if the licensee turns aggressive.',
+  P3: 'Gives a narrower non-assert comfort zone mainly for evaluation use.',
+  P4: 'Suspends patent rights if the licensee launches offensive patent claims around the work.',
+
+  ED: 'Lets educators reuse the work in non-profit teaching contexts.',
+  CE: 'Prevents turning the work into a competing commercial course or curriculum.',
+  RE: 'Allows non-commercial research reuse, adaptation, and study.',
+  CL: 'Allows classroom display, demos, and instruction use.',
+  SC: 'Lets students keep copies for study or course participation.',
+
+  EX: 'Requires downstream use to respect export controls and sanctions rules.',
+  PR: 'Requires privacy-law compliance when the work processes personal data.',
+  AU: 'Requires operators to keep records showing how they complied with the license.',
+  SR: 'Requires a security review before high-risk deployment.',
+  TR: 'Requires transparency reporting in large-scale or sensitive public deployments.',
+};
+
+const getOptionSummary = (categoryId, optionValue) => {
+  if (optionValue === 'None') {
+    return NONE_SUMMARIES[categoryId] ?? 'No additional clause is added for this factor.';
+  }
+
+  return OPTION_SUMMARIES[optionValue] ?? 'This option changes the legal effect of the chosen factor.';
+};
+
 export default function App() {
   const [state, setState] = useState({
     core: 'C1',
@@ -335,6 +448,53 @@ export default function App() {
 
   const licenseCode = `PLF-1.0-${state.core}${activeModules.length > 0 ? `-${activeModules.join('-')}` : ''}`;
   const spdxLicenseRef = `LicenseRef-${licenseCode}`;
+  const conflictWarnings = useMemo(() => {
+    const warnings = [];
+
+    if (state.modification === 'M0' && state.derivative.length > 0) {
+      warnings.push({
+        title: 'No Modification conflicts with derivative obligations.',
+        detail: 'You selected derivative-work duties even though modification is prohibited. Those downstream obligations may be ineffective or confusing because no modified versions can be lawfully distributed.',
+      });
+    }
+
+    if (['MC', 'SM', 'CW'].includes(state.commercial) && state.resale === 'NR') {
+      warnings.push({
+        title: 'Commercial Use conflicts with No Resale.',
+        detail: 'You allow some commercial activity, but you also prohibit selling the work itself. That can be valid, but many users will read it as contradictory unless the distinction is explained clearly.',
+      });
+    }
+
+    if (state.commercial === 'NC' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
+      warnings.push({
+        title: 'Non-Commercial Use conflicts with the selected resale clause.',
+        detail: 'The commercial prohibition points one way while the resale clause points another. This should be narrowed or clarified before relying on the variant publicly.',
+      });
+    }
+
+    if (state.redistribution === 'R0' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
+      warnings.push({
+        title: 'No Redistribution conflicts with the selected resale clause.',
+        detail: 'Resale presumes some downstream transfer, but the redistribution clause blocks that transfer outright.',
+      });
+    }
+
+    if (state.hosting === 'S0' && state.network !== 'None') {
+      warnings.push({
+        title: 'No Hosted Service conflicts with Network Reciprocity.',
+        detail: 'You added network-service duties even though hosted service use is prohibited. Those obligations would only matter if hosted deployment is otherwise allowed.',
+      });
+    }
+
+    if (state.core === 'C3' && (state.modification !== 'None' || state.redistribution !== 'None' || state.hosting !== 'None')) {
+      warnings.push({
+        title: 'View-Only Core may conflict with downstream expansion modules.',
+        detail: 'C3 is a strict inspection-only baseline, while your selected modules reopen modification, redistribution, or hosting pathways. Review the final text carefully to ensure the relationship is explicit.',
+      });
+    }
+
+    return warnings;
+  }, [state]);
 
   const handleRadio = (categoryId, value) => {
     setState((prev) => ({ ...prev, [categoryId]: value }));
@@ -397,6 +557,7 @@ export default function App() {
                       category.type === 'radio'
                         ? state[category.id] === option.val
                         : state[category.id].includes(option.val);
+                    const summary = getOptionSummary(category.id, option.val);
 
                     return (
                       <label
@@ -415,8 +576,13 @@ export default function App() {
                           }
                           className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 ${category.type === 'radio' ? 'rounded-full' : 'rounded'}`}
                         />
-                        <span className={`text-sm ${isChecked ? 'text-blue-900 font-medium' : 'text-slate-600'}`}>
-                          {option.label}
+                        <span className="flex-1">
+                          <span className={`block text-sm ${isChecked ? 'text-blue-900 font-medium' : 'text-slate-600'}`}>
+                            {option.label}
+                          </span>
+                          <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                            {summary}
+                          </span>
                         </span>
                       </label>
                     );
@@ -457,6 +623,25 @@ export default function App() {
               &quot;license&quot;: &quot;SEE LICENSE IN LICENSE&quot;
             </p>
           </div>
+
+          {conflictWarnings.length > 0 ? (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Conflict detection</p>
+                  <div className="mt-3 space-y-3">
+                    {conflictWarnings.map((warning) => (
+                      <div key={warning.title}>
+                        <p className="font-medium">⚠ {warning.title}</p>
+                        <p className="mt-1 text-rose-900/80">{warning.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div
             id="license-output"
