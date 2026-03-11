@@ -35,6 +35,39 @@ PLF-1.0-C1-A-NC-M2-R2-NR-NT-NS-BR-CE
 
 In practice, that means the generator can serve as a policy assembly interface for digital products, templates, software tools, educational material, and other source-available works.
 
+## SPDX Interoperability
+
+Until a PLF variant is formally added to the SPDX License List, the most practical interoperability approach is:
+
+- Use a custom SPDX identifier in source file headers.
+- Include the full corresponding license text in your repository.
+- Use npm-compatible manifest metadata for `package.json`.
+
+Example source header:
+
+```text
+SPDX-License-Identifier: LicenseRef-PLF-1.0-C1-A-NC-M2-R2-NR-NT-NS-BR-CE
+```
+
+Example `package.json` metadata for a custom or unlisted license:
+
+```json
+{
+  "license": "SEE LICENSE IN LICENSE"
+}
+```
+
+Why this distinction matters:
+
+- SPDX guidance allows `LicenseRef-...` for licenses not yet on the SPDX License List, provided you also make the corresponding license text available.
+- npm package metadata documentation still recommends `SEE LICENSE IN <filename>` for custom or unlisted licenses in `package.json`.
+
+For PLF-based projects, the safest current pattern is:
+
+1. Put the full PLF license text in a top-level `LICENSE` file.
+2. Use `SPDX-License-Identifier: LicenseRef-<your-plf-variant>` in source headers.
+3. Use `"license": "SEE LICENSE IN LICENSE"` in `package.json` if you publish through npm tooling.
+
 ## Running Locally
 
 ### Scaffold from scratch

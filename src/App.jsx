@@ -219,6 +219,7 @@ export default function App() {
   }, [state]);
 
   const licenseCode = `PLF-1.0-${state.core}${activeModules.length > 0 ? `-${activeModules.join('-')}` : ''}`;
+  const spdxLicenseRef = `LicenseRef-${licenseCode}`;
 
   const handleRadio = (catId, val) => {
     setState((prev) => ({ ...prev, [catId]: val }));
@@ -319,6 +320,23 @@ export default function App() {
               {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
               {copied ? 'Copied!' : 'Copy License Text'}
             </button>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 shadow-sm">
+            <p className="font-semibold">SPDX interoperability</p>
+            <p className="mt-1">
+              Until PLF is added to the SPDX License List, use a custom SPDX identifier in source headers and
+              include the corresponding full license text in your repository.
+            </p>
+            <p className="mt-3 font-mono text-xs sm:text-sm break-all">
+              SPDX-License-Identifier: {spdxLicenseRef}
+            </p>
+            <p className="mt-3">
+              For <code>package.json</code>, prefer npm-compatible metadata:
+            </p>
+            <p className="mt-2 font-mono text-xs sm:text-sm break-all">
+              &quot;license&quot;: &quot;SEE LICENSE IN LICENSE&quot;
+            </p>
           </div>
 
           <div
