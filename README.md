@@ -193,28 +193,6 @@ git branch -M main
 git push -u origin main
 ```
 
-## Deployment
-
-### Vercel
-
-1. Import the GitHub repository into Vercel.
-2. Use the default Vite settings.
-3. Set the build command to `npm run build`.
-4. Set the output directory to `dist`.
-5. Deploy.
-
-### GitHub Pages
-
-For GitHub Pages, build the app with a repository-specific base path and publish the `dist/` directory.
-
-Typical pattern:
-
-1. Set the Vite base to `/<repo-name>/` for the Pages build.
-2. Run `npm run build`.
-3. Publish `dist/` via GitHub Actions or a Pages deployment branch.
-
-Vercel is the simpler default because it does not require a repository-name base path.
-
 ## Legal Note
 
 PLF is a framework generator and drafting tool. It is not legal advice, and production use for significant commercial rights or cross-jurisdiction enforcement should be reviewed by qualified counsel.
