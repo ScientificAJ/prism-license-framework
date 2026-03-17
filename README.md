@@ -1,3 +1,5 @@
+# [🚀 Try the PLF Generator Live](https://plf.astroclub.space)
+
 # Prism License Framework (PLF) Generator
 
 Software licensing was built for a world before foundation models, dataset scraping, SaaS cloning, and platform-scale extraction. PLF exists because creators now need a way to say something the old defaults cannot say clearly enough:
