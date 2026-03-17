@@ -1,10 +1,43 @@
 # Prism License Framework (PLF) Generator
 
-The Prism License Framework Generator is a modular, source-available license generator for digital creators. It is designed for authors who want more control than permissive licenses like MIT typically provide, while avoiding the rigidity of fully proprietary drafting.
+Software licensing was built for a world before foundation models, dataset scraping, SaaS cloning, and platform-scale extraction. PLF exists because creators now need a way to say something the old defaults cannot say clearly enough:
 
-PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing a single inflexible license, creators compose a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
+> You may build with this work. You may even use it commercially. But you may not turn it into training data, resell it as a clone, strip its identity, or exploit it outside the boundaries the creator chose.
 
-The current generator ships with an expanded option library: every factor exposes at least five choices, the framework now includes additional influence areas such as network reciprocity and compliance governance, and the UI now includes plain-language clause explanations plus conflict detection warnings for potentially contradictory combinations.
+The Prism License Framework Generator is a post-AI era licensing tool for digital creators, indie studios, open-core founders, researchers, educators, and software authors who need more precision than MIT and less blunt force than a fully bespoke proprietary agreement.
+
+PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing one rigid license for every business model, creators assemble a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
+
+The current generator ships with an expanded option library: every factor exposes at least five choices, the framework now includes additional influence areas such as network reciprocity and compliance governance, and the UI includes plain-language clause explanations plus conflict detection warnings for potentially contradictory combinations.
+
+## Why This Matters Now
+
+Developers are no longer only asking:
+
+- Can people use my code?
+- Can people modify my code?
+- Can people sell my code?
+
+They are also asking:
+
+- Can hyperscalers scrape this into training corpora?
+- Can someone wrap this in a hosted service and outcompete me?
+- Can my brand be stripped away and white-labeled?
+- Can someone monetize my work while bypassing the constraints I care about?
+
+That is the core PLF thesis: the post-AI software economy created licensing problems that classic defaults do not address cleanly enough.
+
+## The Core Promise
+
+PLF is designed to let a creator express positions traditional licenses struggle to express in a practical, reusable way:
+
+- `Commercial Use: YES`
+- `AI Training: NO`
+- `Hosting: Named customers only`
+- `Branding: No white-label rebranding`
+- `Resale: Bundled only`
+
+This is not an edge case. It is rapidly becoming a mainstream need.
 
 ## What PLF Is
 

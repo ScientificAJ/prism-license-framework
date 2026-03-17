@@ -656,7 +656,7 @@ export default function App() {
           <ShieldCheck size={32} className="text-blue-400" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Prism License Framework</h1>
-            <p className="text-slate-400 text-sm">Expanded modular licensing generator for digital creators</p>
+            <p className="text-slate-400 text-sm">A post-AI era license generator for creators who want commercial reuse without surrendering model-training rights</p>
           </div>
         </div>
       </header>
@@ -746,6 +746,13 @@ export default function App() {
         </aside>
 
         <section className="w-full lg:w-[62%] bg-slate-100 p-4 lg:p-8 overflow-y-auto relative flex flex-col">
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800 shadow-sm">
+            <p className="font-semibold text-slate-900">Why PLF exists</p>
+            <p className="mt-2 text-slate-600">
+              Traditional licenses were built for an older software economy. PLF is designed for the post-AI era, where creators may want to allow commercial use while still blocking model training, SaaS cloning, white-label resale, or uncredited extraction.
+            </p>
+          </div>
+
           <div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
             <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-md font-mono font-bold text-sm border border-blue-200 shadow-sm break-all">
               {licenseCode}
