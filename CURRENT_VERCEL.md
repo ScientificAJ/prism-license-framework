@@ -1,3 +1,3 @@
-Current Vercel
+Current Project at:
 
-skill-deploy-fquahfqe1l.vercel.app
+plf.astroclub.space
