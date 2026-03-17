@@ -291,6 +291,74 @@ const CATEGORIES = [
 
 const FACTOR_COUNT = CATEGORIES.length;
 const OPTION_COUNT = CATEGORIES.reduce((sum, category) => sum + category.options.length, 0);
+const PRESETS = {
+  'PLF-Open': {
+    description: 'Broad collaboration preset for public source-sharing with fewer downstream restrictions.',
+    state: {
+      core: 'C1',
+      attribution: 'A',
+      commercial: 'MC',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: [],
+      resale: 'FR',
+      ai: 'OA',
+      ethics: [],
+      branding: 'BN',
+      hosting: 'S2',
+      network: 'None',
+      patent: 'P1',
+      education: ['ED', 'RE', 'CL'],
+      compliance: [],
+    },
+  },
+  'PLF-Balanced': {
+    description: 'Middle-ground preset for source-available distribution with guardrails around branding, AI, and hosted use.',
+    state: {
+      core: 'C1',
+      attribution: 'A2',
+      commercial: 'MC',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD', 'MN'],
+      resale: 'BS',
+      ai: 'AT',
+      ethics: ['NS'],
+      branding: 'BR',
+      hosting: 'S3',
+      network: 'N3',
+      patent: 'P1',
+      education: ['CE', 'RE'],
+      compliance: ['PR'],
+    },
+  },
+  'PLF-Protected': {
+    description: 'Creator-protective preset for controlled reuse, no AI training, and no open SaaS resale.',
+    state: {
+      core: 'C1',
+      attribution: 'A',
+      commercial: 'NC',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD'],
+      resale: 'NR',
+      ai: 'NT',
+      ethics: ['NS', 'DS'],
+      branding: 'BR',
+      hosting: 'S0',
+      network: 'None',
+      patent: 'None',
+      education: ['CE'],
+      compliance: ['PR', 'SR'],
+    },
+  },
+};
+const LINEAGE_NOTES = [
+  'Warranty and liability language is adapted from Apache-2.0 style permissive-license boilerplate.',
+  'Network reciprocity modules are modeled on the AGPLv3 idea that remote users should get source-related rights.',
+  'File-difference and modification notice concepts are inspired by file-level copyleft patterns such as MPL-style change notices.',
+  'The presentation model follows the Creative Commons pattern of legal code, a human-readable summary, and machine-readable metadata.',
+];
 
 const NONE_SUMMARIES = {
   attribution: 'No extra attribution duty is added beyond the core and any other active clauses.',
@@ -406,23 +474,8 @@ const getOptionSummary = (categoryId, optionValue) => {
 };
 
 export default function App() {
-  const [state, setState] = useState({
-    core: 'C1',
-    attribution: 'A',
-    commercial: 'NC',
-    modification: 'M2',
-    redistribution: 'R2',
-    derivative: [],
-    resale: 'NR',
-    ai: 'NT',
-    ethics: ['NS'],
-    branding: 'BR',
-    hosting: 'None',
-    network: 'None',
-    patent: 'None',
-    education: ['CE'],
-    compliance: [],
-  });
+  const [state, setState] = useState(PRESETS['PLF-Protected'].state);
+  const [selectedPreset, setSelectedPreset] = useState('PLF-Protected');
   const [copied, setCopied] = useState(false);
 
   const activeModules = useMemo(() => {
@@ -448,6 +501,71 @@ export default function App() {
 
   const licenseCode = `PLF-1.0-${state.core}${activeModules.length > 0 ? `-${activeModules.join('-')}` : ''}`;
   const spdxLicenseRef = `LicenseRef-${licenseCode}`;
+  const deedBullets = useMemo(() => {
+    const bullets = [
+      `Core grant: ${OPTION_SUMMARIES[state.core]}`,
+    ];
+
+    CATEGORIES.forEach((category) => {
+      if (category.id === 'core') {
+        return;
+      }
+
+      if (category.type === 'radio') {
+        const selectedValue = state[category.id];
+
+        if (selectedValue !== 'None') {
+          bullets.push(`${category.title}: ${getOptionSummary(category.id, selectedValue)}`);
+        }
+      } else {
+        state[category.id].forEach((value) => {
+          bullets.push(`${category.title}: ${getOptionSummary(category.id, value)}`);
+        });
+      }
+    });
+
+    return bullets;
+  }, [state]);
+  const compatibilityRows = useMemo(() => {
+    const hasStrongReciprocity =
+      state.derivative.includes('SA') ||
+      state.derivative.includes('SD') ||
+      state.network !== 'None';
+    const hasClosedControls =
+      state.commercial === 'NC' ||
+      state.redistribution === 'R0' ||
+      state.hosting === 'S0' ||
+      state.resale === 'NR';
+
+    return [
+      {
+        ecosystem: 'MIT / BSD codebases',
+        status: hasStrongReciprocity ? 'Review Required' : 'Generally Low Friction',
+        detail: hasStrongReciprocity
+          ? 'Permissive code can often be combined inbound, but your reciprocal or disclosure clauses will likely govern the PLF-covered portion on the way out.'
+          : 'Permissive inbound code is usually the easiest fit when the PLF variant has fewer reciprocal obligations.',
+      },
+      {
+        ecosystem: 'Apache-2.0 codebases',
+        status: state.patent === 'P0' ? 'Review Required' : 'Generally Low Friction',
+        detail: state.patent === 'P0'
+          ? 'Apache projects expect explicit patent comfort, so a no-patent PLF variant needs closer review.'
+          : 'Apache-style notice and patent expectations are usually easier to explain with the balanced or open presets.',
+      },
+      {
+        ecosystem: 'GPL / AGPL codebases',
+        status: 'High Review Burden',
+        detail: 'Strong copyleft and strong-custom obligations can collide. Treat GPL and AGPL combinations as counsel-review territory unless you intentionally design the integration boundary.',
+      },
+      {
+        ecosystem: 'Proprietary combined products',
+        status: hasClosedControls ? 'Possible but Constrained' : 'Case by Case',
+        detail: hasClosedControls
+          ? 'Internal use or bundled distribution may still be possible, but resale, SaaS, or AI restrictions can sharply limit outbound commercial packaging.'
+          : 'Proprietary combination is often possible, but the selected modules still need an explicit inbound/outbound review before approval.',
+      },
+    ];
+  }, [state]);
   const conflictWarnings = useMemo(() => {
     const warnings = [];
 
@@ -496,11 +614,18 @@ export default function App() {
     return warnings;
   }, [state]);
 
+  const applyPreset = (presetName) => {
+    setState(PRESETS[presetName].state);
+    setSelectedPreset(presetName);
+  };
+
   const handleRadio = (categoryId, value) => {
+    setSelectedPreset('Custom');
     setState((prev) => ({ ...prev, [categoryId]: value }));
   };
 
   const handleCheckbox = (categoryId, value) => {
+    setSelectedPreset('Custom');
     setState((prev) => {
       const current = prev[categoryId];
 
@@ -544,6 +669,33 @@ export default function App() {
           <p className="mb-6 text-sm text-slate-500">
             {FACTOR_COUNT} factors and {OPTION_COUNT} selectable positions. Each factor now includes at least five choices.
           </p>
+
+          <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Golden presets</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Push most users toward canonical configurations that legal teams can pre-review once.
+            </p>
+            <div className="mt-4 space-y-3">
+              {Object.entries(PRESETS).map(([presetName, preset]) => {
+                const isActive = selectedPreset === presetName;
+
+                return (
+                  <button
+                    key={presetName}
+                    type="button"
+                    onClick={() => applyPreset(presetName)}
+                    className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${isActive ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-100'}`}
+                  >
+                    <span className="block text-sm font-semibold text-slate-900">{presetName}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-500">{preset.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              Active selection: <span className="font-semibold text-slate-700">{selectedPreset}</span>
+            </p>
+          </div>
 
           <div className="space-y-8">
             {CATEGORIES.map((category) => (
@@ -624,6 +776,17 @@ export default function App() {
             </p>
           </div>
 
+          <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-950 shadow-sm">
+            <p className="font-semibold">Clause lineage</p>
+            <div className="mt-3 space-y-2">
+              {LINEAGE_NOTES.map((note) => (
+                <p key={note} className="text-sky-900/85">
+                  {note}
+                </p>
+              ))}
+            </div>
+          </div>
+
           {conflictWarnings.length > 0 ? (
             <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950 shadow-sm">
               <div className="flex items-start gap-3">
@@ -643,6 +806,26 @@ export default function App() {
             </div>
           ) : null}
 
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-950 shadow-sm">
+            <p className="font-semibold">Compatibility snapshot</p>
+            <p className="mt-1 text-emerald-900/80">
+              Guidance for inbound/outbound review. This is a triage aid for legal teams, not a substitute for counsel.
+            </p>
+            <div className="mt-4 space-y-3">
+              {compatibilityRows.map((row) => (
+                <div key={row.ecosystem} className="rounded-lg border border-emerald-200 bg-white/70 px-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{row.ecosystem}</p>
+                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide">
+                      {row.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-emerald-900/80">{row.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div
             id="license-output"
             className="bg-white p-8 lg:p-12 rounded-xl shadow-sm border border-slate-200 flex-1 overflow-y-auto prose prose-slate max-w-none text-slate-800"
@@ -658,6 +841,18 @@ export default function App() {
             <p className="text-sm italic mb-8 font-medium">
               By exercising any permissions granted herein, You accept and agree to be bound by the terms and conditions of this License. If You do not agree to these terms, You are not granted any rights to the Work and must immediately cease all use, distribution, and deployment.
             </p>
+
+            <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">Human-Readable Deed</h3>
+            <p className="mb-4 text-sm text-slate-600">
+              Preset: <strong>{selectedPreset}</strong>. This plain-English summary is designed for managers, compliance teams, and procurement reviewers before they dive into the legal code.
+            </p>
+            <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">
+              {deedBullets.map((bullet) => (
+                <li key={bullet} className="rounded border border-slate-200 bg-slate-50 px-4 py-3">
+                  {bullet}
+                </li>
+              ))}
+            </ul>
 
             <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">1. Definitions</h3>
             <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">

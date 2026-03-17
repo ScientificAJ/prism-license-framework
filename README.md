@@ -70,6 +70,37 @@ For PLF-based projects, the safest current pattern is:
 2. Use `SPDX-License-Identifier: LicenseRef-<your-plf-variant>` in source headers.
 3. Use `"license": "SEE LICENSE IN LICENSE"` in `package.json` if you publish through npm tooling.
 
+## Canonical Presets
+
+To reduce legal-review sprawl, the generator now anchors users to three canonical starting points:
+
+- `PLF-Open`: lower-friction sharing and commercial adoption
+- `PLF-Balanced`: source-available default with more explicit downstream guardrails
+- `PLF-Protected`: creator-protective default with no AI training and tighter commercial controls
+
+The goal is operationally simple: if most adopters stay close to these presets, legal teams can review a small number of recognizable variants instead of treating every generated combination as a brand-new license.
+
+## Trust and Translation Layers
+
+The project now explicitly exposes three layers inspired by Creative Commons:
+
+- legal code for lawyers and compliance teams
+- a human-readable deed for managers and developers
+- machine-readable identifiers for tooling and search
+
+The generator UI also now includes:
+
+- plain-English clause explanations for every toggle
+- conflict detection warnings for combinations likely to confuse reviewers
+- lineage notes explaining which familiar licensing traditions inspired each section
+- a compatibility snapshot for inbound and outbound review conversations
+
+## Legal Review Docs
+
+- [Clause lineage](./docs/clause-lineage.md)
+- [Compatibility matrix](./docs/compatibility-matrix.md)
+- [Dear Corporate Legal FAQ](./docs/legal-faq.md)
+
 ## Running Locally
 
 ### Scaffold from scratch
