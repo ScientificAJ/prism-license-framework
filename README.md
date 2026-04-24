@@ -10,7 +10,7 @@ The Prism License Framework Generator is a post-AI era licensing tool for digita
 
 PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing one rigid license for every business model, creators assemble a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
 
-The current generator ships with an expanded option library: every category exposes at least five selectable positions. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, conflict warnings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
+The current generator ships with an expanded option library: every category exposes at least five selectable positions. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, review findings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
 
 ## Why This Matters Now
 
@@ -79,7 +79,7 @@ It flags:
 - ethical field-of-use restrictions
 - SaaS and managed-service restrictions
 - export, privacy, audit, security, and transparency duties
-- custom drift from the nearest golden preset
+- custom drift from the nearest named preset
 
 It also generates practical artifacts:
 
@@ -155,15 +155,15 @@ For PLF-based projects, the safest current pattern is:
 2. Use `SPDX-License-Identifier: LicenseRef-<your-plf-variant>` in source headers.
 3. Use `"license": "SEE LICENSE IN LICENSE"` in `package.json` if you publish through npm tooling.
 
-## Canonical Presets
+## Preset Anchors
 
-To reduce legal-review sprawl, the generator now anchors users to three canonical starting points:
+To reduce legal-review sprawl, the generator now anchors users to three named starting points. In the current registry, these presets are still marked `draft` until their generated legal text is hash-pinned and frozen:
 
 - `PLF-Open`: lower-friction sharing and commercial adoption
 - `PLF-Balanced`: source-available default with more explicit downstream guardrails
 - `PLF-Protected`: creator-protective default with no AI training and tighter commercial controls
 
-The goal is operationally simple: if most adopters stay close to these presets, legal teams can review a small number of recognizable variants instead of treating every generated combination as a brand-new license.
+The operational goal is simple: if most adopters stay close to these presets, legal teams can review a small number of recognizable variants instead of treating every generated combination as a brand-new license.
 
 ## Trust and Translation Layers
 
@@ -231,7 +231,7 @@ If a hard contradiction is detected, exports are locked until the user acknowled
 - [Compatibility matrix](./docs/compatibility-matrix.md)
 - [Dear Corporate Legal FAQ](./docs/legal-faq.md)
 - [Versioning policy](./docs/versioning-policy.md)
-- [PLF 1.0 preset registry](./registry/plf-1.0-presets.json)
+- [PLF 1.0 draft preset registry](./registry/plf-1.0-presets.json)
 
 ## Running Locally
 
