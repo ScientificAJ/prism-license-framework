@@ -10,7 +10,7 @@ The Prism License Framework Generator is a post-AI era licensing tool for digita
 
 PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing one rigid license for every business model, creators assemble a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
 
-The current generator ships with an expanded option library: every factor exposes at least five choices, the framework now includes additional influence areas such as network reciprocity and compliance governance, and the UI includes plain-language clause explanations plus conflict detection warnings for potentially contradictory combinations.
+The current generator ships with an expanded option library: every category exposes at least five selectable positions. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, conflict warnings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
 
 ## Why This Matters Now
 
@@ -66,6 +66,30 @@ PLF now includes an interpretation layer that explains the practical result of t
 - what deserves legal review before use
 
 This closes the gap between “which clauses are selected?” and “what does this actually mean for my project?”
+
+## Legal-Review Cockpit
+
+The generator now treats restrictive combinations as review events, not just harmless configuration.
+
+It flags:
+
+- variants that are source-available but not necessarily OSI-open-source compatible
+- no explicit patent grant selections
+- commercial use paired with AI-training restrictions
+- ethical field-of-use restrictions
+- SaaS and managed-service restrictions
+- export, privacy, audit, security, and transparency duties
+- custom drift from the nearest golden preset
+
+It also generates practical artifacts:
+
+- `LICENSE`
+- `NOTICE`
+- human-readable deed
+- SPDX source headers
+- `package.json` license snippet
+- README license section
+- registry entry with SHA-256 hash
 
 ## What PLF Is
 
@@ -154,7 +178,9 @@ The generator UI also now includes:
 - intent-first entry paths for common creator problems
 - consequence feedback explaining allowed, blocked, required, and review-sensitive outcomes
 - plain-English clause explanations for every toggle
-- conflict detection warnings for combinations likely to confuse reviewers
+- expanded conflict and risk warnings for combinations likely to confuse reviewers
+- preset-drift tracking for custom one-off variants
+- copy and download exports for license artifacts
 - lineage notes explaining which familiar licensing traditions inspired each section
 - a compatibility snapshot for inbound and outbound review conversations
 
@@ -163,6 +189,8 @@ The generator UI also now includes:
 - [Clause lineage](./docs/clause-lineage.md)
 - [Compatibility matrix](./docs/compatibility-matrix.md)
 - [Dear Corporate Legal FAQ](./docs/legal-faq.md)
+- [Versioning policy](./docs/versioning-policy.md)
+- [PLF 1.0 preset registry](./registry/plf-1.0-presets.json)
 
 ## Running Locally
 

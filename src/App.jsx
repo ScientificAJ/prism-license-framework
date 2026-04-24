@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { AlertTriangle, Check, Copy, Info, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Check, Copy, Download, Info, ShieldCheck } from 'lucide-react';
 
 const LEGAL_TEXT = {
   core: {
@@ -591,33 +591,185 @@ const getOptionSummary = (categoryId, optionValue) => {
   return OPTION_SUMMARIES[optionValue] ?? 'This option changes the legal effect of the chosen factor.';
 };
 
+const getActiveModulesForState = (licenseState) => {
+  const modules = [];
+
+  if (licenseState.attribution !== 'None') modules.push(licenseState.attribution);
+  if (licenseState.commercial !== 'None') modules.push(licenseState.commercial);
+  if (licenseState.modification !== 'None') modules.push(licenseState.modification);
+  if (licenseState.redistribution !== 'None') modules.push(licenseState.redistribution);
+  modules.push(...licenseState.derivative);
+  if (licenseState.resale !== 'None') modules.push(licenseState.resale);
+  if (licenseState.ai !== 'None') modules.push(licenseState.ai);
+  modules.push(...licenseState.ethics);
+  if (licenseState.branding !== 'None') modules.push(licenseState.branding);
+  if (licenseState.hosting !== 'None') modules.push(licenseState.hosting);
+  if (licenseState.network !== 'None') modules.push(licenseState.network);
+  if (licenseState.patent !== 'None') modules.push(licenseState.patent);
+  modules.push(...licenseState.education);
+  modules.push(...licenseState.compliance);
+
+  return modules;
+};
+
+const buildLicenseCode = (licenseState, modules = getActiveModulesForState(licenseState)) =>
+  `PLF-1.0-${licenseState.core}${modules.length > 0 ? `-${modules.join('-')}` : ''}`;
+
+const formatCategoryValue = (category, licenseState) => {
+  const value = licenseState[category.id];
+
+  if (category.type === 'checkbox') {
+    return value.length > 0 ? value.join(', ') : 'None';
+  }
+
+  return value;
+};
+
+const getCategorySummary = (category, licenseState) => {
+  const value = licenseState[category.id];
+
+  if (category.type === 'checkbox') {
+    return value.length > 0
+      ? value.map((item) => getOptionSummary(category.id, item)).join(' ')
+      : 'No module selected for this factor.';
+  }
+
+  return getOptionSummary(category.id, value);
+};
+
+const valuesMatch = (left, right) => {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return JSON.stringify([...(left ?? [])].sort()) === JSON.stringify([...(right ?? [])].sort());
+  }
+
+  return left === right;
+};
+
+const getReviewImpact = (categoryId) => {
+  const impacts = {
+    ai: 'AI restrictions are commercially sensitive and frequently trigger reviewer questions.',
+    commercial: 'Commercial scope changes alter who can adopt the work without a separate deal.',
+    compliance: 'Compliance duties add operational obligations that need owner and process review.',
+    derivative: 'Derivative duties affect outbound sharing and combined-product obligations.',
+    ethics: 'Ethical-use limits are field-of-use restrictions and may affect open-source classification.',
+    hosting: 'Hosting changes affect SaaS, managed-service, and cloud-product adoption.',
+    patent: 'Patent posture is a common enterprise approval blocker.',
+    redistribution: 'Redistribution changes affect package, marketplace, and downstream transfer rights.',
+    resale: 'Resale changes affect whether the work can become part of paid offerings.',
+  };
+
+  return impacts[categoryId] ?? 'This differs from the canonical baseline and should be reviewed as a custom choice.';
+};
+
+const buildHumanDeedText = (label, licenseCode, deedBullets) =>
+  [
+    `Human-readable deed for ${licenseCode}`,
+    '',
+    `Selection: ${label}`,
+    '',
+    ...deedBullets.map((bullet) => `- ${bullet}`),
+    '',
+    'This deed is a plain-English aid. The legal text controls.',
+  ].join('\n');
+
+const buildLegalText = (licenseState, modules, licenseCode, deedBullets) =>
+  [
+    'Prism License Framework',
+    `Variant: ${licenseCode}`,
+    'Terms and Conditions for Use, Reproduction, Distribution, and Deployment',
+    '',
+    'Human-Readable Deed',
+    ...deedBullets.map((bullet) => `- ${bullet}`),
+    '',
+    'By exercising any permissions granted herein, You accept and agree to be bound by the terms and conditions of this License. If You do not agree to these terms, You are not granted any rights to the Work and must immediately cease all use, distribution, and deployment.',
+    '',
+    '1. Definitions',
+    '"License" shall mean the terms and conditions for use, reproduction, distribution, deployment, and related obligations as defined by this document.',
+    '"Licensor" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.',
+    '"Legal Entity" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity.',
+    '"You" (or "Licensee") shall mean an individual or Legal Entity exercising permissions granted by this License.',
+    '"Work" shall mean the work of authorship, whether in Source or Object form, made available under the License.',
+    '"Derivative Work" shall mean any work, whether in Source or Object form, that is based on or derived from the Work and for which the modifications represent, as a whole, an original work of authorship.',
+    '"Source" form shall mean the preferred form for making modifications, including software source code, documentation source, configuration files, and editable assets.',
+    '"Object" form shall mean any form resulting from mechanical transformation or translation of a Source form, including compiled binaries, generated documents, and packaged artifacts.',
+    '',
+    `2. Core Grant of Rights (${licenseState.core})`,
+    LEGAL_TEXT.core[licenseState.core],
+    '',
+    '3. Conditions and Specific Restrictions',
+    modules.length > 0
+      ? modules.map((moduleCode) => LEGAL_TEXT.modules[moduleCode]).join('\n\n')
+      : 'No additional restriction modules are applied to this variant.',
+    '',
+    '4. General Provisions',
+    '4.1 Reservation of Rights: All rights not expressly and unambiguously granted by the Licensor herein are entirely reserved. This License does not transfer or assign any ownership of copyrights, patents, trademarks, or other intellectual property rights.',
+    '4.2 Termination: This License and the rights granted hereunder will terminate automatically upon any breach by You of the terms of this License. Individuals or entities who have received compliant copies or Derivative Works from You will not have their licenses terminated, provided such individuals or entities remain in full compliance with the applicable License variant.',
+    '4.3 Disclaimer of Warranty: Unless required by applicable law or agreed to in writing, Licensor provides the Work on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including without limitation any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE.',
+    '4.4 Limitation of Liability: In no event and under no legal theory, whether in tort, contract, or otherwise, unless required by applicable law or agreed to in writing, shall any Licensor or Contributor be liable to You for damages arising as a result of this License or out of the use or inability to use the Work.',
+    '4.5 Severability: If any provision of this License is held to be invalid, illegal, or unenforceable, such invalidity shall not affect the enforceability of the remaining provisions, which shall remain in force to the maximum extent permitted by law.',
+    '4.6 Entire Agreement: This License constitutes the entire agreement between the parties with respect to the Work except where the Licensor has separately granted written commercial, hosting, trademark, or patent permissions.',
+  ].join('\n');
+
+const buildNoticeText = (licenseCode) =>
+  [
+    'NOTICE',
+    '',
+    'Work: [Insert project or work name]',
+    'Original Licensor: [Insert licensor name]',
+    `License Variant: ${licenseCode}`,
+    '',
+    'This NOTICE file is a starter template. Replace bracketed fields before distribution.',
+    '',
+    'Required attribution:',
+    '- Retain copyright, license, patent, trademark, and attribution notices from the source form.',
+    '- Include this NOTICE file or an equivalent attribution appendix with redistributed copies.',
+    '- Identify material modifications, modifier identity, and modification dates where required by the selected PLF modules.',
+  ].join('\n');
+
+const buildReadmeLicenseSection = (licenseCode, spdxLicenseRef, deedBullets) =>
+  [
+    '## License',
+    '',
+    `This project is licensed under ${licenseCode}.`,
+    '',
+    `SPDX-License-Identifier: ${spdxLicenseRef}`,
+    '',
+    'Plain-English summary:',
+    ...deedBullets.map((bullet) => `- ${bullet}`),
+    '',
+    'The summary is not legal text. See the LICENSE file for the controlling terms.',
+  ].join('\n');
+
+const buildHeaderSnippets = (spdxLicenseRef) => ({
+  'JS / TS': `// SPDX-License-Identifier: ${spdxLicenseRef}`,
+  Python: `# SPDX-License-Identifier: ${spdxLicenseRef}`,
+  HTML: `<!-- SPDX-License-Identifier: ${spdxLicenseRef} -->`,
+  CSS: `/* SPDX-License-Identifier: ${spdxLicenseRef} */`,
+  Markdown: `<!-- SPDX-License-Identifier: ${spdxLicenseRef} -->`,
+});
+
+const downloadText = (filename, text) => {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+};
+
 export default function App() {
   const [state, setState] = useState(PRESETS['PLF-Protected'].state);
   const [selectedPreset, setSelectedPreset] = useState('PLF-Protected');
-  const [copied, setCopied] = useState(false);
+  const [copiedTarget, setCopiedTarget] = useState('');
+  const [legalTextHash, setLegalTextHash] = useState('');
 
   const activeModules = useMemo(() => {
-    const modules = [];
-
-    if (state.attribution !== 'None') modules.push(state.attribution);
-    if (state.commercial !== 'None') modules.push(state.commercial);
-    if (state.modification !== 'None') modules.push(state.modification);
-    if (state.redistribution !== 'None') modules.push(state.redistribution);
-    modules.push(...state.derivative);
-    if (state.resale !== 'None') modules.push(state.resale);
-    if (state.ai !== 'None') modules.push(state.ai);
-    modules.push(...state.ethics);
-    if (state.branding !== 'None') modules.push(state.branding);
-    if (state.hosting !== 'None') modules.push(state.hosting);
-    if (state.network !== 'None') modules.push(state.network);
-    if (state.patent !== 'None') modules.push(state.patent);
-    modules.push(...state.education);
-    modules.push(...state.compliance);
-
-    return modules;
+    return getActiveModulesForState(state);
   }, [state]);
 
-  const licenseCode = `PLF-1.0-${state.core}${activeModules.length > 0 ? `-${activeModules.join('-')}` : ''}`;
+  const licenseCode = buildLicenseCode(state, activeModules);
   const spdxLicenseRef = `LicenseRef-${licenseCode}`;
   const deedBullets = useMemo(() => {
     const bullets = [
@@ -644,6 +796,58 @@ export default function App() {
 
     return bullets;
   }, [state]);
+  const legalText = useMemo(
+    () => buildLegalText(state, activeModules, licenseCode, deedBullets),
+    [activeModules, deedBullets, licenseCode, state],
+  );
+  const humanDeedText = useMemo(
+    () => buildHumanDeedText(selectedPreset, licenseCode, deedBullets),
+    [deedBullets, licenseCode, selectedPreset],
+  );
+  const noticeText = useMemo(() => buildNoticeText(licenseCode), [licenseCode]);
+  const packageJsonSnippet = useMemo(
+    () =>
+      [
+        '{',
+        '  "license": "SEE LICENSE IN LICENSE"',
+        '}',
+      ].join('\n'),
+    [],
+  );
+  const readmeLicenseSection = useMemo(
+    () => buildReadmeLicenseSection(licenseCode, spdxLicenseRef, deedBullets),
+    [deedBullets, licenseCode, spdxLicenseRef],
+  );
+  const headerSnippets = useMemo(() => buildHeaderSnippets(spdxLicenseRef), [spdxLicenseRef]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updateHash = async () => {
+      if (!globalThis.crypto?.subtle) {
+        setLegalTextHash('unavailable');
+        return;
+      }
+
+      const digest = await globalThis.crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(legalText),
+      );
+      const hash = [...new Uint8Array(digest)]
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+
+      if (!cancelled) {
+        setLegalTextHash(hash);
+      }
+    };
+
+    updateHash();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [legalText]);
   const compatibilityRows = useMemo(() => {
     const hasStrongReciprocity =
       state.derivative.includes('SA') ||
@@ -684,6 +888,107 @@ export default function App() {
       },
     ];
   }, [state]);
+  const presetDrift = useMemo(() => {
+    const analyses = Object.entries(PRESETS).map(([presetName, preset]) => {
+      const changes = CATEGORIES.filter((category) =>
+        !valuesMatch(state[category.id], preset.state[category.id]),
+      ).map((category) => ({
+        category: category.title,
+        from: formatCategoryValue(category, preset.state),
+        to: formatCategoryValue(category, state),
+        legalImpact: getCategorySummary(category, state),
+        reviewImpact: getReviewImpact(category.id),
+      }));
+
+      return {
+        presetName,
+        changes,
+        distance: changes.length,
+      };
+    }).sort((left, right) => left.distance - right.distance);
+
+    return analyses[0];
+  }, [state]);
+  const isLikelyNotOsiOpenSource = useMemo(() => {
+    return (
+      ['NC', 'IC', 'SM'].includes(state.commercial) ||
+      ['M0', 'M1', 'M3', 'M4'].includes(state.modification) ||
+      ['R0', 'R1', 'R4'].includes(state.redistribution) ||
+      ['NR', 'LR', 'CR', 'BS'].includes(state.resale) ||
+      ['NT', 'AT', 'RA', 'LA'].includes(state.ai) ||
+      state.ethics.length > 0 ||
+      ['BP', 'WL'].includes(state.branding) ||
+      ['S0', 'S1', 'S3', 'S4'].includes(state.hosting) ||
+      state.compliance.length > 0
+    );
+  }, [state]);
+  const legalRiskBadges = useMemo(() => {
+    const badges = [];
+
+    if (isLikelyNotOsiOpenSource) {
+      badges.push({
+        title: 'Source-available, not necessarily open source',
+        detail: 'This variant includes restrictions that may fail OSI-style open-source criteria.',
+      });
+    }
+    if (state.patent === 'None' || state.patent === 'P0') {
+      badges.push({
+        title: 'No explicit patent grant selected',
+        detail: 'Corporate adopters may block approval until patent posture is clarified.',
+      });
+    }
+    if (['NT', 'AT', 'RA', 'LA'].includes(state.ai) && ['MC', 'SM', 'CW', 'IC'].includes(state.commercial)) {
+      badges.push({
+        title: 'Commercial use with AI restriction',
+        detail: 'This is the flagship PLF pattern, but it is nonstandard and likely to trigger ML/product review.',
+      });
+    }
+    if (state.ethics.length > 0) {
+      badges.push({
+        title: 'Ethical field-of-use restriction',
+        detail: 'Ethics modules may increase review burden and affect open-source classification.',
+      });
+    }
+    if (['S0', 'S3', 'S4'].includes(state.hosting)) {
+      badges.push({
+        title: 'SaaS or managed-service restriction',
+        detail: 'Hosted-service limits are commercially material and should be checked against product plans.',
+      });
+    }
+    if (state.compliance.some((item) => ['EX', 'PR', 'AU', 'SR', 'TR'].includes(item))) {
+      badges.push({
+        title: 'Jurisdiction and enforceability review',
+        detail: 'Compliance, export, privacy, audit, and safety duties should be reviewed where the work will be used.',
+      });
+    }
+    if (state.core === 'C5' && ['MC', 'IC', 'SM', 'CW'].includes(state.commercial)) {
+      badges.push({
+        title: 'Community core with commercial override',
+        detail: 'The commercial module changes the practical reading of the non-commercial community baseline.',
+      });
+    }
+
+    return badges;
+  }, [isLikelyNotOsiOpenSource, state]);
+  const registryEntryText = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          schema: 'plf-variant-registry-entry/v1',
+          family: 'PLF',
+          version: '1.0',
+          code: licenseCode,
+          spdxLicenseRef,
+          selectedPath: selectedPreset,
+          hashAlgorithm: 'SHA-256',
+          legalTextHash,
+          immutabilityPolicy: 'Pin the exact LICENSE text and hash. Later PLF revisions must publish new hashes instead of silently changing this generated text.',
+        },
+        null,
+        2,
+      ),
+    [legalTextHash, licenseCode, selectedPreset, spdxLicenseRef],
+  );
   const consequenceSummary = useMemo(() => {
     const allowed = [];
     const blocked = [];
@@ -821,6 +1126,18 @@ export default function App() {
         detail: 'You selected derivative-work duties even though modification is prohibited. Those downstream obligations may be ineffective or confusing because no modified versions can be lawfully distributed.',
       });
     }
+    if (state.modification === 'M1' && state.derivative.some((item) => ['SA', 'SD', 'MN', 'OC'].includes(item))) {
+      warnings.push({
+        title: 'Private Modification conflicts with public derivative duties.',
+        detail: 'Private-only modification makes public share-alike, source-disclosure, naming, or change-back duties hard to trigger. Clarify whether those duties apply only if another module permits distribution.',
+      });
+    }
+    if (state.redistribution === 'R1' && state.derivative.length > 0) {
+      warnings.push({
+        title: 'Unmodified Redistribution conflicts with derivative duties.',
+        detail: 'R1 allows only exact copies, while derivative duties assume modified versions may be distributed.',
+      });
+    }
 
     if (['MC', 'SM', 'CW'].includes(state.commercial) && state.resale === 'NR') {
       warnings.push({
@@ -842,6 +1159,12 @@ export default function App() {
         detail: 'Resale presumes some downstream transfer, but the redistribution clause blocks that transfer outright.',
       });
     }
+    if (state.redistribution === 'R0' && state.derivative.length > 0) {
+      warnings.push({
+        title: 'No Redistribution weakens derivative obligations.',
+        detail: 'Derivative obligations usually matter on downstream transfer. If redistribution is prohibited, these clauses may be mostly dormant unless private modification or hosting creates a separate trigger.',
+      });
+    }
 
     if (state.hosting === 'S0' && state.network !== 'None') {
       warnings.push({
@@ -849,11 +1172,47 @@ export default function App() {
         detail: 'You added network-service duties even though hosted service use is prohibited. Those obligations would only matter if hosted deployment is otherwise allowed.',
       });
     }
+    if (['S0', 'S1'].includes(state.hosting) && state.attribution === 'A5') {
+      warnings.push({
+        title: 'Network Attribution Notice may be dormant or internal-only.',
+        detail: 'A5 assumes network-visible attribution. With no hosted service or internal-only hosting, the notice may never be visible to external users.',
+      });
+    }
+    if (state.hosting === 'S1' && state.network !== 'None') {
+      warnings.push({
+        title: 'Internal Hosting narrows network reciprocity.',
+        detail: 'Network reciprocity modules normally address external remote users. Internal-only hosting may make those obligations less useful or harder to explain.',
+      });
+    }
 
     if (state.core === 'C3' && (state.modification !== 'None' || state.redistribution !== 'None' || state.hosting !== 'None')) {
       warnings.push({
         title: 'View-Only Core may conflict with downstream expansion modules.',
         detail: 'C3 is a strict inspection-only baseline, while your selected modules reopen modification, redistribution, or hosting pathways. Review the final text carefully to ensure the relationship is explicit.',
+      });
+    }
+    if (state.core === 'C3' && state.commercial !== 'None') {
+      warnings.push({
+        title: 'View-Only Core with commercial module is unclear.',
+        detail: 'C3 grants only inspection and viewing by default. A commercial module may not say what commercial activity is actually permitted unless paired with broader use rights.',
+      });
+    }
+    if (state.core === 'C3' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
+      warnings.push({
+        title: 'View-Only Core conflicts with resale permissions.',
+        detail: 'Resale clauses assume transferable value, while C3 limits the baseline to inspection and viewing.',
+      });
+    }
+    if (state.core === 'C3' && ['P1', 'P2', 'P4'].includes(state.patent)) {
+      warnings.push({
+        title: 'View-Only Core with patent grant needs review.',
+        detail: 'A patent grant may be broader than the practical rights available under a strict view-only copyright core.',
+      });
+    }
+    if (state.core === 'C5' && ['MC', 'IC', 'SM', 'CW'].includes(state.commercial)) {
+      warnings.push({
+        title: 'Community Source Core is being commercially narrowed or overridden.',
+        detail: 'C5 reads as community-oriented and non-commercial by default. The selected commercial module must clearly explain whether it overrides or narrows that baseline.',
       });
     }
 
@@ -890,15 +1249,13 @@ export default function App() {
     });
   };
 
-  const copyToClipboard = async () => {
-    const textToCopy = document.getElementById('license-output')?.innerText ?? '';
-
+  const copyText = async (textToCopy, target) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      setCopiedTarget(target);
+      window.setTimeout(() => setCopiedTarget(''), 2000);
     } catch (error) {
-      console.error('Failed to copy license text:', error);
+      console.error('Failed to copy text:', error);
     }
   };
 
@@ -1036,11 +1393,11 @@ export default function App() {
             </div>
             <button
               type="button"
-              onClick={copyToClipboard}
+              onClick={() => copyText(legalText, 'legal')}
               className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium text-slate-700 transition-colors shadow-sm"
             >
-              {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-              {copied ? 'Copied!' : 'Copy License Text'}
+              {copiedTarget === 'legal' ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+              {copiedTarget === 'legal' ? 'Copied!' : 'Copy License Text'}
             </button>
           </div>
 
@@ -1067,6 +1424,107 @@ export default function App() {
             </div>
           </div>
 
+          {legalRiskBadges.length > 0 ? (
+            <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-4 text-sm text-orange-950 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Legal-risk badges</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {legalRiskBadges.map((badge) => (
+                      <div key={badge.title} className="rounded-lg border border-orange-200 bg-white/70 px-3 py-3">
+                        <p className="font-medium">{badge.title}</p>
+                        <p className="mt-1 text-orange-900/80">{badge.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mb-4 rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-4 text-sm text-fuchsia-950 shadow-sm">
+            <p className="font-semibold">Preset drift</p>
+            <p className="mt-1 text-fuchsia-900/80">
+              {presetDrift.distance === 0
+                ? `This matches ${presetDrift.presetName}. Legal review can use the canonical preset path.`
+                : `Custom variant: ${presetDrift.distance} changes from ${presetDrift.presetName}. Review burden likely increased.`}
+            </p>
+            {presetDrift.distance > 0 ? (
+              <div className="mt-4 space-y-3">
+                {presetDrift.changes.slice(0, 6).map((change) => (
+                  <div key={change.category} className="rounded-lg border border-fuchsia-200 bg-white/70 px-3 py-3">
+                    <p className="font-medium">{change.category}</p>
+                    <p className="mt-1 text-fuchsia-900/80">
+                      Canonical: <span className="font-mono">{change.from}</span> / Current: <span className="font-mono">{change.to}</span>
+                    </p>
+                    <p className="mt-1 text-fuchsia-900/80">{change.reviewImpact}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800 shadow-sm">
+            <p className="font-semibold text-slate-900">Export artifacts</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {[
+                ['legal', 'Copy legal code', legalText],
+                ['deed', 'Copy human deed', humanDeedText],
+                ['spdx', 'Copy SPDX header', `SPDX-License-Identifier: ${spdxLicenseRef}`],
+                ['package', 'Copy package.json snippet', packageJsonSnippet],
+                ['readme', 'Copy README license section', readmeLicenseSection],
+                ['registry', 'Copy registry entry', registryEntryText],
+              ].map(([target, label, text]) => (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => copyText(text, target)}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <span>{label}</span>
+                  {copiedTarget === target ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                </button>
+              ))}
+              {[
+                ['LICENSE', 'Download LICENSE', legalText],
+                ['NOTICE', 'Download NOTICE', noticeText],
+                ['README-license-section.md', 'Download README section', readmeLicenseSection],
+                ['plf-registry-entry.json', 'Download registry entry', registryEntryText],
+              ].map(([filename, label, text]) => (
+                <button
+                  key={filename}
+                  type="button"
+                  onClick={() => downloadText(filename, text)}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <span>{label}</span>
+                  <Download size={16} />
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              Legal text hash: <span className="font-mono">{legalTextHash || 'calculating'}</span>
+            </p>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800 shadow-sm">
+            <p className="font-semibold text-slate-900">Source headers</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {Object.entries(headerSnippets).map(([language, snippet]) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => copyText(snippet, `header-${language}`)}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <span>{language}</span>
+                  {copiedTarget === `header-${language}` ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 shadow-sm">
             <p className="font-semibold">SPDX interoperability</p>
             <p className="mt-1">
@@ -1085,6 +1543,9 @@ export default function App() {
 
           <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-950 shadow-sm">
             <p className="font-semibold">Clause lineage</p>
+            <p className="mt-1 text-sky-900/80">
+              Inspired by familiar license patterns does not mean legally compatible with those licenses.
+            </p>
             <div className="mt-3 space-y-2">
               {LINEAGE_NOTES.map((note) => (
                 <p key={note} className="text-sky-900/85">
@@ -1151,7 +1612,7 @@ export default function App() {
 
             <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">Human-Readable Deed</h3>
             <p className="mb-4 text-sm text-slate-600">
-              Preset: <strong>{selectedPreset}</strong>. This plain-English summary is designed for managers, compliance teams, and procurement reviewers before they dive into the legal code.
+              Selection: <strong>{selectedPreset}</strong>. This plain-English summary is designed for managers, compliance teams, and procurement reviewers before they dive into the legal code.
             </p>
             <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">
               {deedBullets.map((bullet) => (

@@ -18,6 +18,8 @@ This matrix is a review aid for inbound and outbound legal conversations. It is 
 | PLF-Balanced | Review required | Review required | High review burden | Generally low friction | Review required |
 | PLF-Protected | Review required | Review required | High review burden | Review required | High review burden |
 
+This matrix applies only to canonical presets. A custom variant should not inherit the preset result automatically. The generator’s preset-drift panel shows how many factor categories changed from the nearest preset and should be treated as an escalation signal.
+
 ## How To Read It
 
 ### MIT / BSD
@@ -52,3 +54,7 @@ When legal reviews a PLF variant, they should answer:
 6. Is the team using a canonical preset or a custom one-off variant?
 
 If the answer to item 6 is “custom one-off variant,” expect review time to go up materially.
+
+## Current Variant Review
+
+For generated variants, reviewers should use the live UI’s dynamic compatibility snapshot and legal-risk badges first. The preset matrix is a baseline; the selected modules are the actual review object.

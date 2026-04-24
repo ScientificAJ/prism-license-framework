@@ -17,6 +17,8 @@ No. The framework is modular, but the major concepts are familiar:
 
 The goal is not novelty for its own sake. The goal is structured reuse of familiar licensing ideas.
 
+Familiar lineage does not mean license compatibility. A PLF variant must be reviewed on its actual generated text, active modules, and pinned hash.
+
 ## 2. What is the inbound / outbound posture?
 
 That depends on the selected preset or variant.
@@ -46,6 +48,8 @@ Patent review should focus on:
 - whether patent retaliation is triggered by offensive claims
 - whether the business expects Apache-style patent comfort
 
+The UI should treat no-patent and no-explicit-patent variants as high-friction for enterprise adoption.
+
 ## 5. What about warranty disclaimer and limitation of liability?
 
 PLF uses familiar risk-allocation language in the style of well-known permissive licenses. The objective is that legal teams recognize the structure immediately instead of treating it as bespoke novelty.
@@ -63,6 +67,7 @@ Recommended process:
 3. Review outbound posture for internal use, distributed product, and hosted service separately.
 4. Review AI, branding, patent, and compliance modules explicitly.
 5. If the team wants a custom variant, treat it as an exception rather than the default path.
+6. Pin the exact generated `LICENSE` text and registry hash.
 
 ## 8. What is the recommended adoption path?
 
@@ -71,7 +76,12 @@ For organizations that want low review overhead:
 - pre-approve PLF-Open, PLF-Balanced, and PLF-Protected
 - discourage ad hoc one-off variants except where business needs justify the extra review
 - require any custom variant to include a human-readable deed and compatibility review
+- require custom variants to store a registry entry with the generated text hash
 
-## 9. Is this legal advice?
+## 9. What is the versioning policy?
+
+PLF variant codes identify selected modules, but the exact legal text should still be pinned by hash. Canonical preset text should not change silently. Material clause changes should publish a new hash and, where necessary, a new PLF version.
+
+## 10. Is this legal advice?
 
 No. PLF is a drafting and policy framework. Final enforceability, jurisdictional treatment, and enterprise risk posture should be reviewed by qualified counsel.

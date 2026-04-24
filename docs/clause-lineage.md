@@ -2,6 +2,8 @@
 
 This document exists to reduce novelty friction. PLF is not intended as a license family invented from nothing. It is a modular assembly framework that borrows from familiar open-source and source-available traditions.
 
+Lineage is not compatibility. Saying a module is Apache-style, AGPL-style, MPL-style, or Creative-Commons-inspired means the idea is familiar, not that the generated PLF variant is legally equivalent to, or automatically compatible with, those licenses.
+
 ## Positioning
 
 PLF should be described as:
@@ -58,3 +60,5 @@ PLF documentation should say clauses are:
 - aligned with the tradition of
 
 Avoid saying a clause is “identical” unless you have performed a literal text comparison and intentionally preserved the wording exactly.
+
+Avoid using lineage notes as compatibility claims. Compatibility should be reviewed through the actual generated variant, active modules, and pinned license text hash.

@@ -1,0 +1,24 @@
+{
+  "schema": "plf-preset-registry/v1",
+  "family": "PLF",
+  "version": "1.0",
+  "hashAlgorithm": "SHA-256",
+  "immutabilityPolicy": "Canonical preset legal text must not be silently rewritten. Publish a new hash or new PLF version for material legal-text changes.",
+  "presets": [
+    {
+      "name": "PLF-Open",
+      "code": "PLF-1.0-C1-A-MC-M2-R2-FR-OA-BN-S2-P1-ED-RE-CL",
+      "legalTextHash": "21b053af60106688230a1f4d90bf87b674817d89518cbbaaa4da3f5a40634cef"
+    },
+    {
+      "name": "PLF-Balanced",
+      "code": "PLF-1.0-C1-A2-MC-M2-R2-FD-MN-BS-AT-NS-BR-S3-N3-P1-CE-RE-PR",
+      "legalTextHash": "ac6273d51fc8d857a159d58bd38efbb6b8a16cf8171a3bfe9f3363c66e5559fa"
+    },
+    {
+      "name": "PLF-Protected",
+      "code": "PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-S0-CE-PR-SR",
+      "legalTextHash": "039cd7bfea515efe5899a0a0209a72d81ae342767d79006bbb4d43b077fd8742"
+    }
+  ]
+}
