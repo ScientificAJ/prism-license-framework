@@ -41,6 +41,32 @@ PLF is designed to let a creator express positions traditional licenses struggle
 
 This is not an edge case. It is rapidly becoming a mainstream need.
 
+## Start With Intent
+
+The generator now starts with the problem the creator is trying to solve, not with legal machinery.
+
+Intent paths include:
+
+- “I do not want AI companies scraping my work”
+- “I do not want someone wrapping this as a hosted clone”
+- “I want indie devs and small studios, but not large corporations”
+- “I want paid use allowed, but not selling the work itself”
+- “I want broad collaboration, but I still want credit”
+- “I want companies to evaluate or use this internally, not ship it outward”
+
+Each intent applies a concrete PLF configuration that users can then refine through the advanced factors.
+
+## Consequence Feedback
+
+PLF now includes an interpretation layer that explains the practical result of the selected combination:
+
+- what is allowed
+- what is blocked
+- what obligations are imposed
+- what deserves legal review before use
+
+This closes the gap between “which clauses are selected?” and “what does this actually mean for my project?”
+
 ## What PLF Is
 
 PLF is a composable licensing system built around two layers:
@@ -125,6 +151,8 @@ The project now explicitly exposes three layers inspired by Creative Commons:
 
 The generator UI also now includes:
 
+- intent-first entry paths for common creator problems
+- consequence feedback explaining allowed, blocked, required, and review-sensitive outcomes
 - plain-English clause explanations for every toggle
 - conflict detection warnings for combinations likely to confuse reviewers
 - lineage notes explaining which familiar licensing traditions inspired each section

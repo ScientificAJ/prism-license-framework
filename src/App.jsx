@@ -353,6 +353,124 @@ const PRESETS = {
     },
   },
 };
+const INTENT_PATHS = {
+  aiTrainingNo: {
+    label: 'Block AI training',
+    problem: 'I do not want AI companies scraping my work.',
+    outcome: 'Allows normal commercial reuse while explicitly blocking model training and evaluation.',
+    state: {
+      core: 'C1',
+      attribution: 'A2',
+      commercial: 'MC',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD'],
+      resale: 'BS',
+      ai: 'NT',
+      ethics: ['NS'],
+      branding: 'BR',
+      hosting: 'S2',
+      network: 'N3',
+      patent: 'P1',
+      education: ['RE'],
+      compliance: ['PR'],
+    },
+  },
+  noSaasClones: {
+    label: 'Stop SaaS clones',
+    problem: 'I do not want someone wrapping this as a hosted clone.',
+    outcome: 'Allows source-visible reuse while blocking public hosted service clones and standalone resale.',
+    state: {
+      core: 'C1',
+      attribution: 'A5',
+      commercial: 'CW',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD', 'MN'],
+      resale: 'NR',
+      ai: 'AT',
+      ethics: ['NS'],
+      branding: 'WL',
+      hosting: 'S0',
+      network: 'None',
+      patent: 'P1',
+      education: ['CE', 'RE'],
+      compliance: ['PR', 'SR'],
+    },
+  },
+  indieNotEnterprise: {
+    label: 'Indies yes, big companies no',
+    problem: 'I want indie devs and small studios, but not large corporations.',
+    outcome: 'Allows commercial use only for small entities and keeps larger corporate use outside the default grant.',
+    state: {
+      core: 'C5',
+      attribution: 'A2',
+      commercial: 'SM',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD'],
+      resale: 'BS',
+      ai: 'AT',
+      ethics: ['NS'],
+      branding: 'BR',
+      hosting: 'S3',
+      network: 'N3',
+      patent: 'P1',
+      education: ['ED', 'RE'],
+      compliance: ['PR'],
+    },
+  },
+  commercialNoResale: {
+    label: 'Commercial use, no resale',
+    problem: 'I want paid use allowed, but not selling the work itself.',
+    outcome: 'Permits commercial activity while blocking standalone resale or clone packaging.',
+    state: {
+      core: 'C1',
+      attribution: 'A',
+      commercial: 'MC',
+      modification: 'M2',
+      redistribution: 'R2',
+      derivative: ['FD'],
+      resale: 'NR',
+      ai: 'AT',
+      ethics: [],
+      branding: 'BR',
+      hosting: 'S3',
+      network: 'N3',
+      patent: 'P1',
+      education: ['RE'],
+      compliance: ['PR'],
+    },
+  },
+  openAttribution: {
+    label: 'Open with attribution',
+    problem: 'I want broad collaboration, but I still want credit.',
+    outcome: 'Keeps the license close to permissive source-sharing with attribution and patent comfort.',
+    state: PRESETS['PLF-Open'].state,
+  },
+  internalEnterprise: {
+    label: 'Internal enterprise only',
+    problem: 'I want companies to evaluate or use this internally, not ship it outward.',
+    outcome: 'Allows internal commercial use while blocking external redistribution, public hosting, and resale.',
+    state: {
+      core: 'C2',
+      attribution: 'A3',
+      commercial: 'IC',
+      modification: 'M1',
+      redistribution: 'R0',
+      derivative: [],
+      resale: 'NR',
+      ai: 'LA',
+      ethics: ['NS'],
+      branding: 'BP',
+      hosting: 'S1',
+      network: 'None',
+      patent: 'P3',
+      education: [],
+      compliance: ['PR', 'AU', 'SR'],
+    },
+  },
+};
 const LINEAGE_NOTES = [
   'Warranty and liability language is adapted from Apache-2.0 style permissive-license boilerplate.',
   'Network reciprocity modules are modeled on the AGPLv3 idea that remote users should get source-related rights.',
@@ -566,6 +684,134 @@ export default function App() {
       },
     ];
   }, [state]);
+  const consequenceSummary = useMemo(() => {
+    const allowed = [];
+    const blocked = [];
+    const obligations = [];
+    const review = [];
+
+    if (state.commercial === 'MC') {
+      allowed.push('Commercial use is allowed, but only inside the other selected guardrails.');
+    }
+    if (state.commercial === 'SM') {
+      allowed.push('Small studios and independent developers can use this commercially by default.');
+      review.push('Large-company use should be handled through a separate permission path.');
+    }
+    if (state.commercial === 'IC') {
+      allowed.push('Companies can use the work internally.');
+      blocked.push('External commercial distribution is not part of the default grant.');
+    }
+    if (state.commercial === 'CW') {
+      allowed.push('Paid client-service work is allowed when the work is not sold as a standalone product.');
+    }
+    if (state.commercial === 'NC') {
+      blocked.push('Commercial monetization is blocked unless the licensor gives separate permission.');
+    }
+
+    if (state.modification === 'M2') {
+      allowed.push('Modified versions can be created and shared if the selected downstream duties are followed.');
+    }
+    if (state.modification === 'M1') {
+      allowed.push('Private or internal modifications are allowed.');
+      blocked.push('Sharing modified versions outside the organization is blocked.');
+    }
+    if (state.modification === 'M0') {
+      blocked.push('Changing the work or shipping modified versions is blocked.');
+    }
+
+    if (state.redistribution === 'R2') {
+      allowed.push('Redistribution is allowed subject to the rest of this variant.');
+    }
+    if (state.redistribution === 'R0') {
+      blocked.push('Redistribution to third parties is blocked.');
+    }
+    if (state.redistribution === 'R3') {
+      obligations.push('Redistributors must provide source form rather than object-only packages.');
+    }
+    if (state.redistribution === 'R4') {
+      obligations.push('Redistribution should be limited to tracked or registered recipients.');
+    }
+
+    if (state.ai === 'NT') {
+      blocked.push('AI training, fine-tuning, benchmarking, and evaluation are blocked.');
+    }
+    if (state.ai === 'AT') {
+      blocked.push('AI training is not granted by default and requires separate written permission.');
+    }
+    if (state.ai === 'RA') {
+      allowed.push('Non-commercial research AI use is allowed.');
+      blocked.push('Production or monetized AI use remains outside the default grant.');
+    }
+    if (state.ai === 'LA') {
+      allowed.push('Local private AI experiments are allowed.');
+      blocked.push('Hosted, shared, or customer-facing AI use is blocked.');
+    }
+    if (state.ai === 'OA') {
+      allowed.push('AI and machine-learning use are allowed.');
+    }
+
+    if (state.hosting === 'S0') {
+      blocked.push('Public SaaS or hosted-service clones are blocked.');
+    }
+    if (state.hosting === 'S1') {
+      allowed.push('Internal hosting is allowed for employees and authorized contractors.');
+      blocked.push('External hosted service access is blocked.');
+    }
+    if (state.hosting === 'S2') {
+      allowed.push('Public hosted-service use is allowed.');
+    }
+    if (state.hosting === 'S3') {
+      allowed.push('Hosted deployments are limited to named customers or controlled client instances.');
+      review.push('General multi-tenant SaaS use needs closer review or separate permission.');
+    }
+    if (state.hosting === 'S4') {
+      review.push('Managed-service hosting requires separate permission or a commercial arrangement.');
+    }
+
+    if (state.resale === 'NR') {
+      blocked.push('Standalone resale of the work is blocked.');
+    }
+    if (state.resale === 'BS') {
+      allowed.push('Bundled resale is allowed when the work is not the primary standalone value.');
+    }
+    if (state.resale === 'CR') {
+      allowed.push('Cost-recovery fees are allowed.');
+      blocked.push('Profit-taking on the work itself is blocked.');
+    }
+    if (state.resale === 'FR') {
+      allowed.push('Paid resale and fee-based distribution are allowed.');
+    }
+
+    if (state.attribution !== 'None') {
+      obligations.push(getOptionSummary('attribution', state.attribution));
+    }
+    state.derivative.forEach((value) => {
+      obligations.push(getOptionSummary('derivative', value));
+    });
+    if (state.network !== 'None') {
+      obligations.push(getOptionSummary('network', state.network));
+    }
+    state.compliance.forEach((value) => {
+      obligations.push(getOptionSummary('compliance', value));
+    });
+    if (state.branding === 'WL' || state.branding === 'BP' || state.branding === 'BR') {
+      obligations.push(getOptionSummary('branding', state.branding));
+    }
+
+    if (state.patent === 'P0' || state.patent === 'None') {
+      review.push('Patent comfort is limited; counsel may want to review patent exposure.');
+    }
+    if (state.network !== 'None' || state.derivative.includes('SA') || state.derivative.includes('SD')) {
+      review.push('Reciprocity or disclosure duties are active, so outbound product review matters.');
+    }
+
+    return {
+      allowed: allowed.length > 0 ? allowed : ['The core grant controls the main permissions for this variant.'],
+      blocked: blocked.length > 0 ? blocked : ['No major use category is explicitly blocked beyond the selected legal text.'],
+      obligations: obligations.length > 0 ? obligations : ['No major downstream operational obligation is selected beyond the core license text.'],
+      review: review.length > 0 ? review : ['This configuration has no obvious high-friction review flag from the current guidance rules.'],
+    };
+  }, [state]);
   const conflictWarnings = useMemo(() => {
     const warnings = [];
 
@@ -619,6 +865,13 @@ export default function App() {
     setSelectedPreset(presetName);
   };
 
+  const applyIntent = (intentKey) => {
+    const intent = INTENT_PATHS[intentKey];
+
+    setState(intent.state);
+    setSelectedPreset(`Intent: ${intent.label}`);
+  };
+
   const handleRadio = (categoryId, value) => {
     setSelectedPreset('Custom');
     setState((prev) => ({ ...prev, [categoryId]: value }));
@@ -669,6 +922,30 @@ export default function App() {
           <p className="mb-6 text-sm text-slate-500">
             {FACTOR_COUNT} factors and {OPTION_COUNT} selectable positions. Each factor now includes at least five choices.
           </p>
+
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-900">Start with the problem</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Pick the thing you are trying to prevent, then refine the legal structure below.
+            </p>
+            <div className="mt-4 space-y-3">
+              {Object.entries(INTENT_PATHS).map(([intentKey, intent]) => {
+                const isActive = selectedPreset === `Intent: ${intent.label}`;
+
+                return (
+                  <button
+                    key={intentKey}
+                    type="button"
+                    onClick={() => applyIntent(intentKey)}
+                    className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${isActive ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}
+                  >
+                    <span className="block text-sm font-semibold text-slate-900">{intent.problem}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-500">{intent.outcome}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-semibold text-slate-900">Golden presets</p>
@@ -765,6 +1042,29 @@ export default function App() {
               {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
               {copied ? 'Copied!' : 'Copy License Text'}
             </button>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-4 text-sm text-indigo-950 shadow-sm">
+            <p className="font-semibold">Because you selected this</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {[
+                ['Allowed', consequenceSummary.allowed],
+                ['Blocked', consequenceSummary.blocked],
+                ['Required', consequenceSummary.obligations],
+                ['Review before use', consequenceSummary.review],
+              ].map(([title, items]) => (
+                <div key={title} className="border-t border-indigo-200 pt-3">
+                  <p className="font-medium">{title}</p>
+                  <ul className="mt-2 space-y-2">
+                    {items.map((item) => (
+                      <li key={item} className="text-indigo-900/80">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 shadow-sm">
