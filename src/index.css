@@ -24,3 +24,30 @@ body {
   margin: 0;
   min-width: 320px;
 }
+
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+@media print {
+  aside,
+  header,
+  button,
+  textarea,
+  input {
+    display: none !important;
+  }
+
+  main,
+  section {
+    display: block !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  #license-output {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}

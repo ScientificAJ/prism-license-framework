@@ -22,7 +22,7 @@ Include these in a project repository:
 - `SPDX-License-Identifier: LicenseRef-<variant>` headers where appropriate
 - a README license section
 - optional `NOTICE`
-- registry entry containing the variant code and SHA-256 hash
+- registry entry containing the variant code, PLF version, generator version, hash method, SHA-256 hash, hash input, generation timestamp, preset base, and custom drift count
 
 ## Canonical Preset Registry
 
@@ -33,3 +33,9 @@ registry/plf-1.0-presets.json
 ```
 
 Custom variants should generate their own registry entry from the UI and store it with the consuming project.
+
+Registry entries must distinguish final hashes from placeholders:
+
+- Use `status: "canonical"` only for finalized legal text with a real SHA-256 hash.
+- Use `status: "draft"` and `legalTextHash: null` for preset entries that still need final text regeneration.
+- Generated custom entries should record `hashInput: "exact LICENSE text UTF-8"` so another reviewer can reproduce the hash.

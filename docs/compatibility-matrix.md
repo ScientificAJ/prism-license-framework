@@ -12,11 +12,11 @@ This matrix is a review aid for inbound and outbound legal conversations. It is 
 
 ## Canonical Preset Matrix
 
-| Preset | MIT / BSD | Apache-2.0 | GPL / AGPL | Proprietary internal use | Proprietary distributed product |
-| --- | --- | --- | --- | --- | --- |
-| PLF-Open | Generally low friction | Generally low friction | Review required | Generally low friction | Review required |
-| PLF-Balanced | Review required | Review required | High review burden | Generally low friction | Review required |
-| PLF-Protected | Review required | Review required | High review burden | Review required | High review burden |
+| Preset | MIT / BSD | Apache-2.0 | GPL / AGPL | Proprietary internal use | Proprietary distributed product | SaaS product | AI company use |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PLF-Open | Generally low friction | Generally low friction | Review required | Generally low friction | Review required | Generally low friction | Generally low friction |
+| PLF-Balanced | Review required | Review required | High review burden | Generally low friction | Review required | Review required | Review required |
+| PLF-Protected | Review required | Review required | High review burden | Review required | High review burden | High review burden | High review burden |
 
 This matrix applies only to canonical presets. A custom variant should not inherit the preset result automatically. The generator’s preset-drift panel shows how many factor categories changed from the nearest preset and should be treated as an escalation signal.
 
@@ -41,6 +41,14 @@ Internal evaluation or internal deployment is usually the easiest proprietary po
 ### Proprietary Distributed Products
 
 This is where outbound friction rises quickly. Resale controls, SaaS restrictions, share-alike duties, source disclosure, and branding limitations all matter at once. Legal teams should compare the chosen preset against the exact commercial packaging model.
+
+### SaaS Products
+
+Hosted-service use is its own review category. `S0`, `S1`, `S3`, `S4`, `A5`, and `N1` through `N5` should be reviewed together because network obligations can become redundant, confusing, or impossible to trigger when hosted use is restricted.
+
+### AI Company Use
+
+AI use is not a single yes/no question. Review teams should separate normal commercial software use from scraping, training, fine-tuning, evaluation, benchmarking, distillation, model development, and hosted AI pipeline ingestion.
 
 ## Inbound / Outbound Checklist
 

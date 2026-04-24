@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Check, Copy, Download, Info, ShieldCheck } from 'lucide-react';
 
+const PLF_VERSION = '1.0';
+const GENERATOR_VERSION = '0.1.0';
+
 const LEGAL_TEXT = {
   core: {
     C1: 'Subject to the terms and conditions of this License, Licensor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form. The foregoing grant is expressly made subject to, and conditioned upon, Your strict compliance with all active Modules enumerated in Section 3.',
@@ -358,6 +361,10 @@ const INTENT_PATHS = {
     label: 'Block AI training',
     problem: 'I do not want AI companies scraping my work.',
     outcome: 'Allows normal commercial reuse while explicitly blocking model training and evaluation.',
+    assumptions: [
+      'Commercial product use is allowed only when the user can keep the work out of ML training, evaluation, scraping, and model-development pipelines.',
+      'Hosted deployments are allowed, but they must keep attribution and public API notices visible.',
+    ],
     state: {
       core: 'C1',
       attribution: 'A2',
@@ -380,6 +387,10 @@ const INTENT_PATHS = {
     label: 'Stop SaaS clones',
     problem: 'I do not want someone wrapping this as a hosted clone.',
     outcome: 'Allows source-visible reuse while blocking public hosted service clones and standalone resale.',
+    assumptions: [
+      'Client-service work is allowed, but public multi-tenant SaaS clones are not.',
+      'The network attribution module is removed because hosted use is blocked by default.',
+    ],
     state: {
       core: 'C1',
       attribution: 'A5',
@@ -402,6 +413,10 @@ const INTENT_PATHS = {
     label: 'Indies yes, big companies no',
     problem: 'I want indie devs and small studios, but not large corporations.',
     outcome: 'Allows commercial use only for small entities and keeps larger corporate use outside the default grant.',
+    assumptions: [
+      'Small-entity eligibility is treated as a commercial boundary that larger companies must clear through separate permission.',
+      'Named-customer hosting is allowed, but broad public SaaS remains review-sensitive.',
+    ],
     state: {
       core: 'C5',
       attribution: 'A2',
@@ -424,6 +439,10 @@ const INTENT_PATHS = {
     label: 'Commercial use, no resale',
     problem: 'I want paid use allowed, but not selling the work itself.',
     outcome: 'Permits commercial activity while blocking standalone resale or clone packaging.',
+    assumptions: [
+      'Commercial services and integrations may be allowed, but selling the work itself remains outside the default grant.',
+      'Named-customer hosting is preferred over broad public SaaS to reduce clone risk.',
+    ],
     state: {
       core: 'C1',
       attribution: 'A',
@@ -446,12 +465,20 @@ const INTENT_PATHS = {
     label: 'Open with attribution',
     problem: 'I want broad collaboration, but I still want credit.',
     outcome: 'Keeps the license close to permissive source-sharing with attribution and patent comfort.',
+    assumptions: [
+      'Broad reuse, redistribution, resale, hosting, and AI use are acceptable as long as attribution and patent expectations are clear.',
+      'This path intentionally stays closest to familiar permissive-license review patterns.',
+    ],
     state: PRESETS['PLF-Open'].state,
   },
   internalEnterprise: {
     label: 'Internal enterprise only',
     problem: 'I want companies to evaluate or use this internally, not ship it outward.',
     outcome: 'Allows internal commercial use while blocking external redistribution, public hosting, and resale.',
+    assumptions: [
+      'Enterprise users can inspect and run the work internally, but outbound redistribution is not part of the grant.',
+      'Audit, privacy, and security duties are included because internal enterprise use often needs operational evidence.',
+    ],
     state: {
       core: 'C2',
       attribution: 'A3',
@@ -477,6 +504,42 @@ const LINEAGE_NOTES = [
   'File-difference and modification notice concepts are inspired by file-level copyleft patterns such as MPL-style change notices.',
   'The presentation model follows the Creative Commons pattern of legal code, a human-readable summary, and machine-readable metadata.',
 ];
+
+const LICENSE_FAMILY_COMPARISON = [
+  {
+    family: 'MIT',
+    posture: 'Maximum permissive reuse with minimal obligations.',
+    whenToUse: 'Use when adoption speed matters more than AI, SaaS, resale, or brand controls.',
+  },
+  {
+    family: 'Apache-2.0',
+    posture: 'Permissive reuse with explicit patent and notice machinery.',
+    whenToUse: 'Use when enterprise patent comfort is important and restrictions are intentionally light.',
+  },
+  {
+    family: 'GPL / AGPL',
+    posture: 'Strong copyleft reciprocity, with AGPL covering network service use.',
+    whenToUse: 'Use when reciprocal openness is the primary policy goal.',
+  },
+  {
+    family: 'Elastic / BSL-style source-available',
+    posture: 'Public source access with commercial or hosted-service limits.',
+    whenToUse: 'Use when protecting a commercial product boundary matters more than OSI classification.',
+  },
+  {
+    family: 'Selected PLF variant',
+    posture: 'Composable source-available policy with explicit module-by-module risk visibility.',
+    whenToUse: 'Use when you need a precise mix such as commercial use allowed, AI training blocked, and SaaS cloning restricted.',
+  },
+];
+
+const DEFAULT_METADATA = {
+  projectName: '',
+  licensorName: '',
+  copyrightYear: '',
+  contact: '',
+  projectUrl: '',
+};
 
 const NONE_SUMMARIES = {
   attribution: 'No extra attribution duty is added beyond the core and any other active clauses.',
@@ -615,6 +678,75 @@ const getActiveModulesForState = (licenseState) => {
 const buildLicenseCode = (licenseState, modules = getActiveModulesForState(licenseState)) =>
   `PLF-1.0-${licenseState.core}${modules.length > 0 ? `-${modules.join('-')}` : ''}`;
 
+const createEmptyState = () =>
+  CATEGORIES.reduce((accumulator, category) => {
+    if (category.id === 'core') {
+      accumulator[category.id] = 'C1';
+    } else if (category.type === 'checkbox') {
+      accumulator[category.id] = [];
+    } else {
+      accumulator[category.id] = 'None';
+    }
+
+    return accumulator;
+  }, {});
+
+const findCategoryForToken = (token) =>
+  CATEGORIES.find((category) =>
+    category.options.some((option) => option.val !== 'None' && option.val === token),
+  );
+
+const parseVariantCode = (rawInput) => {
+  const normalizedInput = rawInput.toUpperCase();
+  const codeMatch = normalizedInput.match(/(?:LICENSEREF-)?(PLF-1\.0-[A-Z0-9-]+)/);
+
+  if (!codeMatch) {
+    return {
+      ok: false,
+      code: '',
+      state: null,
+      unknownTokens: [],
+      message: 'Paste a PLF-1.0 variant code or LicenseRef-PLF-1.0 identifier.',
+    };
+  }
+
+  const code = codeMatch[1];
+  const tokens = code.replace('PLF-1.0-', '').split('-').filter(Boolean);
+  const nextState = createEmptyState();
+  const unknownTokens = [];
+  let hasCore = false;
+
+  tokens.forEach((token) => {
+    const category = findCategoryForToken(token);
+
+    if (!category) {
+      unknownTokens.push(token);
+      return;
+    }
+
+    if (category.id === 'core') {
+      nextState.core = token;
+      hasCore = true;
+    } else if (category.type === 'checkbox') {
+      if (!nextState[category.id].includes(token)) {
+        nextState[category.id].push(token);
+      }
+    } else {
+      nextState[category.id] = token;
+    }
+  });
+
+  return {
+    ok: hasCore && unknownTokens.length === 0,
+    code,
+    state: nextState,
+    unknownTokens,
+    message: hasCore
+      ? 'Variant code parsed. Review the preview, then apply it to the generator.'
+      : 'Variant code is missing a core token such as C1, C2, C3, C4, or C5.',
+  };
+};
+
 const formatCategoryValue = (category, licenseState) => {
   const value = licenseState[category.id];
 
@@ -661,24 +793,46 @@ const getReviewImpact = (categoryId) => {
   return impacts[categoryId] ?? 'This differs from the canonical baseline and should be reviewed as a custom choice.';
 };
 
+const formatMetadataValue = (value, fallback) => {
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : fallback;
+};
+
+const getStateDiff = (fromState, toState) =>
+  CATEGORIES.filter((category) => !valuesMatch(fromState[category.id], toState[category.id])).map((category) => ({
+    category: category.title,
+    from: formatCategoryValue(category, fromState),
+    to: formatCategoryValue(category, toState),
+    reviewImpact: getReviewImpact(category.id),
+  }));
+
 const buildHumanDeedText = (label, licenseCode, deedBullets) =>
   [
     `Human-readable deed for ${licenseCode}`,
     '',
     `Selection: ${label}`,
     '',
+    'This deed is non-normative. The legal code controls.',
+    '',
     ...deedBullets.map((bullet) => `- ${bullet}`),
     '',
-    'This deed is a plain-English aid. The legal text controls.',
   ].join('\n');
 
-const buildLegalText = (licenseState, modules, licenseCode, deedBullets) =>
+const buildLegalText = (licenseState, modules, licenseCode, deedBullets, metadata) =>
   [
     'Prism License Framework',
     `Variant: ${licenseCode}`,
     'Terms and Conditions for Use, Reproduction, Distribution, and Deployment',
     '',
+    `Work: ${formatMetadataValue(metadata.projectName, '[Insert project or work name]')}`,
+    `Licensor: ${formatMetadataValue(metadata.licensorName, '[Insert licensor name]')}`,
+    `Copyright Year: ${formatMetadataValue(metadata.copyrightYear, '[Insert year]')}`,
+    `Contact: ${formatMetadataValue(metadata.contact, '[Insert contact URL or email]')}`,
+    `Project URL: ${formatMetadataValue(metadata.projectUrl, '[Insert project URL]')}`,
+    '',
     'Human-Readable Deed',
+    'This deed is non-normative. The legal code controls.',
     ...deedBullets.map((bullet) => `- ${bullet}`),
     '',
     'By exercising any permissions granted herein, You accept and agree to be bound by the terms and conditions of this License. If You do not agree to these terms, You are not granted any rights to the Work and must immediately cease all use, distribution, and deployment.',
@@ -710,13 +864,14 @@ const buildLegalText = (licenseState, modules, licenseCode, deedBullets) =>
     '4.6 Entire Agreement: This License constitutes the entire agreement between the parties with respect to the Work except where the Licensor has separately granted written commercial, hosting, trademark, or patent permissions.',
   ].join('\n');
 
-const buildNoticeText = (licenseCode) =>
+const buildNoticeText = (licenseCode, metadata) =>
   [
     'NOTICE',
     '',
-    'Work: [Insert project or work name]',
-    'Original Licensor: [Insert licensor name]',
+    `Work: ${formatMetadataValue(metadata.projectName, '[Insert project or work name]')}`,
+    `Original Licensor: ${formatMetadataValue(metadata.licensorName, '[Insert licensor name]')}`,
     `License Variant: ${licenseCode}`,
+    `Contact: ${formatMetadataValue(metadata.contact, '[Insert contact URL or email]')}`,
     '',
     'This NOTICE file is a starter template. Replace bracketed fields before distribution.',
     '',
@@ -726,11 +881,11 @@ const buildNoticeText = (licenseCode) =>
     '- Identify material modifications, modifier identity, and modification dates where required by the selected PLF modules.',
   ].join('\n');
 
-const buildReadmeLicenseSection = (licenseCode, spdxLicenseRef, deedBullets) =>
+const buildReadmeLicenseSection = (licenseCode, spdxLicenseRef, deedBullets, metadata) =>
   [
     '## License',
     '',
-    `This project is licensed under ${licenseCode}.`,
+    `${formatMetadataValue(metadata.projectName, 'This project')} is licensed under ${licenseCode}.`,
     '',
     `SPDX-License-Identifier: ${spdxLicenseRef}`,
     '',
@@ -746,7 +901,66 @@ const buildHeaderSnippets = (spdxLicenseRef) => ({
   HTML: `<!-- SPDX-License-Identifier: ${spdxLicenseRef} -->`,
   CSS: `/* SPDX-License-Identifier: ${spdxLicenseRef} */`,
   Markdown: `<!-- SPDX-License-Identifier: ${spdxLicenseRef} -->`,
+  Shell: `# SPDX-License-Identifier: ${spdxLicenseRef}`,
 });
+
+const buildContributorPolicyText = (licenseCode, metadata) =>
+  [
+    'Contributor Policy',
+    '',
+    `Project: ${formatMetadataValue(metadata.projectName, '[Insert project or work name]')}`,
+    `Active PLF Variant: ${licenseCode}`,
+    '',
+    'By contributing, you agree that your contribution is licensed under the project’s active PLF variant unless a different written contributor agreement or project policy expressly says otherwise.',
+    '',
+    'This starter policy should be reviewed before accepting substantial external contributions.',
+  ].join('\n');
+
+const buildCommercialExceptionText = (licenseCode, metadata) =>
+  [
+    'Commercial Exception Notice',
+    '',
+    `Project: ${formatMetadataValue(metadata.projectName, '[Insert project or work name]')}`,
+    `Active PLF Variant: ${licenseCode}`,
+    '',
+    `For commercial, hosted-service, AI-training, trademark, patent, or other permissions outside this PLF variant, contact: ${formatMetadataValue(metadata.contact, '[Insert contact URL or email]')}.`,
+    '',
+    'No exception is granted unless it is separately approved in writing by the licensor.',
+  ].join('\n');
+
+const buildReviewSummaryText = (
+  licenseCode,
+  selectedPreset,
+  legalTextHash,
+  presetDrift,
+  legalRiskBadges,
+  reviewFindings,
+  scenarioRows,
+) =>
+  [
+    `PLF Review Summary: ${licenseCode}`,
+    '',
+    `Selection: ${selectedPreset}`,
+    `Nearest preset: ${presetDrift.presetName}`,
+    `Drift count: ${presetDrift.distance}`,
+    `SHA-256: ${legalTextHash || 'calculating'}`,
+    '',
+    'Legal-risk badges:',
+    ...(legalRiskBadges.length > 0
+      ? legalRiskBadges.map((badge) => `- ${badge.title}: ${badge.detail}`)
+      : ['- No legal-risk badge triggered by current rules.']),
+    '',
+    'Review findings:',
+    ...Object.entries(reviewFindings).flatMap(([bucket, findings]) => [
+      `${bucket.toUpperCase()}:`,
+      ...(findings.length > 0
+        ? findings.map((finding) => `- ${finding.title} ${finding.detail}`)
+        : ['- None']),
+    ]),
+    '',
+    'Scenario preview:',
+    ...scenarioRows.map((row) => `- ${row.scenario}: ${row.status}. ${row.detail}`),
+  ].join('\n');
 
 const downloadText = (filename, text) => {
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -762,8 +976,14 @@ const downloadText = (filename, text) => {
 export default function App() {
   const [state, setState] = useState(PRESETS['PLF-Protected'].state);
   const [selectedPreset, setSelectedPreset] = useState('PLF-Protected');
+  const [metadata, setMetadata] = useState(DEFAULT_METADATA);
   const [copiedTarget, setCopiedTarget] = useState('');
   const [legalTextHash, setLegalTextHash] = useState('');
+  const [generatedAt, setGeneratedAt] = useState(() => new Date().toISOString());
+  const [lastIntentSummary, setLastIntentSummary] = useState(null);
+  const [exportedLegalText, setExportedLegalText] = useState('');
+  const [acknowledgedBlockedExport, setAcknowledgedBlockedExport] = useState(false);
+  const [variantImportInput, setVariantImportInput] = useState('');
 
   const activeModules = useMemo(() => {
     return getActiveModulesForState(state);
@@ -797,14 +1017,24 @@ export default function App() {
     return bullets;
   }, [state]);
   const legalText = useMemo(
-    () => buildLegalText(state, activeModules, licenseCode, deedBullets),
-    [activeModules, deedBullets, licenseCode, state],
+    () => buildLegalText(state, activeModules, licenseCode, deedBullets, metadata),
+    [activeModules, deedBullets, licenseCode, metadata, state],
   );
   const humanDeedText = useMemo(
     () => buildHumanDeedText(selectedPreset, licenseCode, deedBullets),
     [deedBullets, licenseCode, selectedPreset],
   );
-  const noticeText = useMemo(() => buildNoticeText(licenseCode), [licenseCode]);
+  const noticeRequired = useMemo(
+    () => state.attribution !== 'None' || state.branding !== 'None',
+    [state.attribution, state.branding],
+  );
+  const noticeText = useMemo(
+    () =>
+      noticeRequired
+        ? buildNoticeText(licenseCode, metadata)
+        : 'NOTICE optional for this variant. No attribution or branding module currently requires a NOTICE-style artifact.',
+    [licenseCode, metadata, noticeRequired],
+  );
   const packageJsonSnippet = useMemo(
     () =>
       [
@@ -815,10 +1045,28 @@ export default function App() {
     [],
   );
   const readmeLicenseSection = useMemo(
-    () => buildReadmeLicenseSection(licenseCode, spdxLicenseRef, deedBullets),
-    [deedBullets, licenseCode, spdxLicenseRef],
+    () => buildReadmeLicenseSection(licenseCode, spdxLicenseRef, deedBullets, metadata),
+    [deedBullets, licenseCode, metadata, spdxLicenseRef],
   );
   const headerSnippets = useMemo(() => buildHeaderSnippets(spdxLicenseRef), [spdxLicenseRef]);
+  const contributorPolicyText = useMemo(
+    () => buildContributorPolicyText(licenseCode, metadata),
+    [licenseCode, metadata],
+  );
+  const commercialExceptionText = useMemo(
+    () => buildCommercialExceptionText(licenseCode, metadata),
+    [licenseCode, metadata],
+  );
+  const metadataIncomplete = useMemo(
+    () =>
+      !metadata.projectName.trim() ||
+      !metadata.licensorName.trim() ||
+      !metadata.copyrightYear.trim() ||
+      !metadata.contact.trim() ||
+      !metadata.projectUrl.trim(),
+    [metadata],
+  );
+  const exportIsStale = exportedLegalText.length > 0 && exportedLegalText !== legalText;
 
   useEffect(() => {
     let cancelled = false;
@@ -859,6 +1107,10 @@ export default function App() {
       state.hosting === 'S0' ||
       state.resale === 'NR';
 
+    const aiRestricted = ['NT', 'AT', 'RA', 'LA'].includes(state.ai);
+    const hostingRestricted = ['S0', 'S1', 'S3', 'S4'].includes(state.hosting);
+    const redistributionBlocked = ['R0', 'R1', 'R4'].includes(state.redistribution);
+
     return [
       {
         ecosystem: 'MIT / BSD codebases',
@@ -880,11 +1132,30 @@ export default function App() {
         detail: 'Strong copyleft and strong-custom obligations can collide. Treat GPL and AGPL combinations as counsel-review territory unless you intentionally design the integration boundary.',
       },
       {
-        ecosystem: 'Proprietary combined products',
-        status: hasClosedControls ? 'Possible but Constrained' : 'Case by Case',
-        detail: hasClosedControls
-          ? 'Internal use or bundled distribution may still be possible, but resale, SaaS, or AI restrictions can sharply limit outbound commercial packaging.'
-          : 'Proprietary combination is often possible, but the selected modules still need an explicit inbound/outbound review before approval.',
+        ecosystem: 'Proprietary internal use',
+        status: state.core === 'C3' || state.redistribution === 'R0' ? 'Usually Possible with Scope Review' : 'Case by Case',
+        detail: 'Internal use is often easier than outbound distribution, but commercial, patent, audit, privacy, and AI restrictions still need owner approval.',
+      },
+      {
+        ecosystem: 'Proprietary distributed product',
+        status: hasClosedControls || redistributionBlocked ? 'Constrained / Review Required' : 'Case by Case',
+        detail: hasClosedControls || redistributionBlocked
+          ? 'Outbound product distribution may be blocked or narrowed by resale, redistribution, non-commercial, or disclosure modules.'
+          : 'Distribution may be possible, but the PLF-covered portion and third-party dependencies must be reviewed separately.',
+      },
+      {
+        ecosystem: 'SaaS product',
+        status: hostingRestricted ? 'Restricted / Review Required' : 'Case by Case',
+        detail: hostingRestricted
+          ? 'Hosted-service permissions are narrowed or blocked. SaaS, API, and managed-service use need explicit review.'
+          : 'Hosted use is not directly blocked, but network notices, source offers, and attribution duties may still apply.',
+      },
+      {
+        ecosystem: 'AI company use',
+        status: aiRestricted ? 'Restricted / Review Required' : 'Case by Case',
+        detail: aiRestricted
+          ? 'AI training, evaluation, scraping, or production model use is restricted or permission-only under the current AI module.'
+          : 'AI use is not specially restricted by the AI module, but commercial, privacy, and dependency boundaries still matter.',
       },
     ];
   }, [state]);
@@ -919,40 +1190,58 @@ export default function App() {
       state.ethics.length > 0 ||
       ['BP', 'WL'].includes(state.branding) ||
       ['S0', 'S1', 'S3', 'S4'].includes(state.hosting) ||
+      state.education.includes('CE') ||
       state.compliance.length > 0
     );
+  }, [state]);
+  const restrictiveModuleCount = useMemo(() => {
+    const restrictiveSingles = [
+      state.commercial,
+      state.modification,
+      state.redistribution,
+      state.resale,
+      state.ai,
+      state.branding,
+      state.hosting,
+      state.network,
+      state.patent,
+    ].filter((value) =>
+      ['NC', 'IC', 'SM', 'M0', 'M1', 'M3', 'M4', 'R0', 'R1', 'R3', 'R4', 'NR', 'LR', 'CR', 'BS', 'NT', 'AT', 'RA', 'LA', 'BR', 'BP', 'WL', 'S0', 'S1', 'S3', 'S4', 'N1', 'N2', 'N3', 'N4', 'N5', 'P0'].includes(value),
+    ).length;
+
+    return restrictiveSingles + state.derivative.length + state.ethics.length + state.compliance.length + (state.education.includes('CE') ? 1 : 0);
   }, [state]);
   const legalRiskBadges = useMemo(() => {
     const badges = [];
 
     if (isLikelyNotOsiOpenSource) {
       badges.push({
-        title: 'Source-available, not necessarily open source',
-        detail: 'This variant includes restrictions that may fail OSI-style open-source criteria.',
+        title: 'Source-available warning',
+        detail: 'This variant includes restrictions that may make it unsuitable for OSI-style open-source use. Review commercial, AI-training, SaaS, ethical-use, and field-of-use limits before publishing.',
       });
     }
     if (state.patent === 'None' || state.patent === 'P0') {
       badges.push({
-        title: 'No explicit patent grant selected',
-        detail: 'Corporate adopters may block approval until patent posture is clarified.',
+        title: 'Patent review warning',
+        detail: 'This variant does not include an explicit patent grant. Enterprise adopters may require additional review or a separate patent permission.',
       });
     }
     if (['NT', 'AT', 'RA', 'LA'].includes(state.ai) && ['MC', 'SM', 'CW', 'IC'].includes(state.commercial)) {
       badges.push({
-        title: 'Commercial use with AI restriction',
-        detail: 'This is the flagship PLF pattern, but it is nonstandard and likely to trigger ML/product review.',
+        title: 'AI/commercial boundary',
+        detail: 'Commercial use may be allowed, but AI training, evaluation, scraping, or model-development use is restricted. Organizations with ML pipelines should review data-handling boundaries.',
       });
     }
     if (state.ethics.length > 0) {
       badges.push({
-        title: 'Ethical field-of-use restriction',
-        detail: 'Ethics modules may increase review burden and affect open-source classification.',
+        title: 'Field-of-use restriction',
+        detail: 'Ethical-use limits are active. These may increase legal review burden and may affect open-source compatibility claims.',
       });
     }
     if (['S0', 'S3', 'S4'].includes(state.hosting)) {
       badges.push({
-        title: 'SaaS or managed-service restriction',
-        detail: 'Hosted-service limits are commercially material and should be checked against product plans.',
+        title: 'Hosting/network mismatch',
+        detail: 'Hosted-service permissions and network obligations may overlap, conflict, or become redundant. Review SaaS, API, managed-service, and network-disclosure modules together.',
       });
     }
     if (state.compliance.some((item) => ['EX', 'PR', 'AU', 'SR', 'TR'].includes(item))) {
@@ -967,27 +1256,52 @@ export default function App() {
         detail: 'The commercial module changes the practical reading of the non-commercial community baseline.',
       });
     }
+    if (metadataIncomplete) {
+      badges.push({
+        title: 'Metadata incomplete',
+        detail: 'Project name, licensor, year, contact, or project URL fields are still generic. Customize them before publishing generated artifacts.',
+      });
+    }
+    if (restrictiveModuleCount >= 9) {
+      badges.push({
+        title: 'High restriction density',
+        detail: 'Many restrictive modules are active. Adoption friction is likely. Consider PLF-Balanced unless each restriction has a clear policy reason.',
+      });
+    }
 
     return badges;
-  }, [isLikelyNotOsiOpenSource, state]);
+  }, [isLikelyNotOsiOpenSource, metadataIncomplete, restrictiveModuleCount, state]);
   const registryEntryText = useMemo(
     () =>
       JSON.stringify(
         {
           schema: 'plf-variant-registry-entry/v1',
           family: 'PLF',
-          version: '1.0',
-          code: licenseCode,
+          variant: licenseCode,
+          plfVersion: PLF_VERSION,
+          generatorVersion: GENERATOR_VERSION,
+          sha256: legalTextHash || null,
+          hashInput: 'exact LICENSE text UTF-8',
+          generatedAt,
+          presetBase: presetDrift.presetName,
+          customDriftCount: presetDrift.distance,
           spdxLicenseRef,
           selectedPath: selectedPreset,
           hashAlgorithm: 'SHA-256',
-          legalTextHash,
+          status: presetDrift.distance === 0 ? 'canonical-match' : 'custom-draft',
+          metadata: {
+            projectName: formatMetadataValue(metadata.projectName, '[Insert project or work name]'),
+            licensorName: formatMetadataValue(metadata.licensorName, '[Insert licensor name]'),
+            copyrightYear: formatMetadataValue(metadata.copyrightYear, '[Insert year]'),
+            contact: formatMetadataValue(metadata.contact, '[Insert contact URL or email]'),
+            projectUrl: formatMetadataValue(metadata.projectUrl, '[Insert project URL]'),
+          },
           immutabilityPolicy: 'Pin the exact LICENSE text and hash. Later PLF revisions must publish new hashes instead of silently changing this generated text.',
         },
         null,
         2,
       ),
-    [legalTextHash, licenseCode, selectedPreset, spdxLicenseRef],
+    [generatedAt, legalTextHash, licenseCode, metadata, presetDrift, selectedPreset, spdxLicenseRef],
   );
   const consequenceSummary = useMemo(() => {
     const allowed = [];
@@ -1117,127 +1431,214 @@ export default function App() {
       review: review.length > 0 ? review : ['This configuration has no obvious high-friction review flag from the current guidance rules.'],
     };
   }, [state]);
-  const conflictWarnings = useMemo(() => {
-    const warnings = [];
+  const reviewFindings = useMemo(() => {
+    const findings = {
+      blocked: [],
+      conflicts: [],
+      redundancies: [],
+      risks: [],
+      notes: [],
+    };
+    const add = (bucket, title, detail) => {
+      findings[bucket].push({ title, detail });
+    };
 
     if (state.modification === 'M0' && state.derivative.length > 0) {
-      warnings.push({
-        title: 'No Modification conflicts with derivative obligations.',
-        detail: 'You selected derivative-work duties even though modification is prohibited. Those downstream obligations may be ineffective or confusing because no modified versions can be lawfully distributed.',
-      });
+      add('blocked', 'No Modification conflicts with derivative obligations.', 'You selected derivative-work duties even though modification is prohibited. Export requires acknowledgement because this variant is likely ambiguous as written.');
     }
     if (state.modification === 'M1' && state.derivative.some((item) => ['SA', 'SD', 'MN', 'OC'].includes(item))) {
-      warnings.push({
-        title: 'Private Modification conflicts with public derivative duties.',
-        detail: 'Private-only modification makes public share-alike, source-disclosure, naming, or change-back duties hard to trigger. Clarify whether those duties apply only if another module permits distribution.',
-      });
+      add('conflicts', 'Private Modification conflicts with public derivative duties.', 'Private-only modification makes public share-alike, source-disclosure, naming, or change-back duties hard to trigger. Clarify whether those duties apply only if another module permits distribution.');
     }
     if (state.redistribution === 'R1' && state.derivative.length > 0) {
-      warnings.push({
-        title: 'Unmodified Redistribution conflicts with derivative duties.',
-        detail: 'R1 allows only exact copies, while derivative duties assume modified versions may be distributed.',
-      });
+      add('conflicts', 'Unmodified Redistribution conflicts with derivative duties.', 'R1 allows only exact copies, while derivative duties assume modified versions may be distributed.');
     }
 
     if (['MC', 'SM', 'CW'].includes(state.commercial) && state.resale === 'NR') {
-      warnings.push({
-        title: 'Commercial Use conflicts with No Resale.',
-        detail: 'You allow some commercial activity, but you also prohibit selling the work itself. That can be valid, but many users will read it as contradictory unless the distinction is explained clearly.',
-      });
+      add('conflicts', 'Commercial Use conflicts with No Resale.', 'You allow some commercial activity, but you also prohibit selling the work itself. This can be valid, but many users will read it as contradictory unless the distinction is explained clearly.');
     }
 
     if (state.commercial === 'NC' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
-      warnings.push({
-        title: 'Non-Commercial Use conflicts with the selected resale clause.',
-        detail: 'The commercial prohibition points one way while the resale clause points another. This should be narrowed or clarified before relying on the variant publicly.',
-      });
+      add('blocked', 'Non-Commercial Use conflicts with the selected resale clause.', 'The commercial prohibition points one way while the resale clause points another. Narrow or clarify this before relying on the variant publicly.');
     }
 
     if (state.redistribution === 'R0' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
-      warnings.push({
-        title: 'No Redistribution conflicts with the selected resale clause.',
-        detail: 'Resale presumes some downstream transfer, but the redistribution clause blocks that transfer outright.',
-      });
+      add('blocked', 'No Redistribution conflicts with the selected resale clause.', 'Resale presumes downstream transfer, but the redistribution clause blocks that transfer outright.');
     }
     if (state.redistribution === 'R0' && state.derivative.length > 0) {
-      warnings.push({
-        title: 'No Redistribution weakens derivative obligations.',
-        detail: 'Derivative obligations usually matter on downstream transfer. If redistribution is prohibited, these clauses may be mostly dormant unless private modification or hosting creates a separate trigger.',
-      });
+      add('redundancies', 'No Redistribution weakens derivative obligations.', 'Derivative obligations usually matter on downstream transfer. If redistribution is prohibited, these clauses may be mostly dormant unless private modification or hosting creates a separate trigger.');
     }
 
     if (state.hosting === 'S0' && state.network !== 'None') {
-      warnings.push({
-        title: 'No Hosted Service conflicts with Network Reciprocity.',
-        detail: 'You added network-service duties even though hosted service use is prohibited. Those obligations would only matter if hosted deployment is otherwise allowed.',
-      });
+      add('conflicts', 'No Hosted Service conflicts with Network Reciprocity.', 'Network obligations may be irrelevant, redundant, or confusing when hosted use is restricted.');
     }
     if (['S0', 'S1'].includes(state.hosting) && state.attribution === 'A5') {
-      warnings.push({
-        title: 'Network Attribution Notice may be dormant or internal-only.',
-        detail: 'A5 assumes network-visible attribution. With no hosted service or internal-only hosting, the notice may never be visible to external users.',
-      });
+      add('redundancies', 'Network Attribution Notice may be dormant or internal-only.', 'A5 assumes network-visible attribution. With no hosted service or internal-only hosting, the notice may never be visible to external users.');
     }
     if (state.hosting === 'S1' && state.network !== 'None') {
-      warnings.push({
-        title: 'Internal Hosting narrows network reciprocity.',
-        detail: 'Network reciprocity modules normally address external remote users. Internal-only hosting may make those obligations less useful or harder to explain.',
-      });
+      add('redundancies', 'Internal Hosting narrows network reciprocity.', 'Network reciprocity modules normally address external remote users. Internal-only hosting may make those obligations less useful or harder to explain.');
+    }
+    if (state.hosting === 'S3' && state.network === 'N3') {
+      add('risks', 'Named-customer hosting with public API notice needs review.', 'S3 limits hosting to controlled customer deployments, while N3 assumes public-facing API notice duties. Review whether the notice belongs in each named-customer environment.');
     }
 
     if (state.core === 'C3' && (state.modification !== 'None' || state.redistribution !== 'None' || state.hosting !== 'None')) {
-      warnings.push({
-        title: 'View-Only Core may conflict with downstream expansion modules.',
-        detail: 'C3 is a strict inspection-only baseline, while your selected modules reopen modification, redistribution, or hosting pathways. Review the final text carefully to ensure the relationship is explicit.',
-      });
+      add('blocked', 'View-Only Core may conflict with downstream expansion modules.', 'C3 is a strict inspection-only baseline, while your selected modules reopen modification, redistribution, or hosting pathways. Choose an evaluation/internal core or narrow the expansion modules.');
     }
-    if (state.core === 'C3' && state.commercial !== 'None') {
-      warnings.push({
-        title: 'View-Only Core with commercial module is unclear.',
-        detail: 'C3 grants only inspection and viewing by default. A commercial module may not say what commercial activity is actually permitted unless paired with broader use rights.',
-      });
+    if (state.core === 'C3' && ['MC', 'SM', 'CW', 'IC'].includes(state.commercial)) {
+      add('blocked', 'View-Only Core conflicts with broad commercial modules.', 'C3 grants only inspection and viewing by default. Commercial exploitation modules do not clearly define what commercial activity is permitted under a view-only core.');
     }
     if (state.core === 'C3' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
-      warnings.push({
-        title: 'View-Only Core conflicts with resale permissions.',
-        detail: 'Resale clauses assume transferable value, while C3 limits the baseline to inspection and viewing.',
-      });
+      add('blocked', 'View-Only Core conflicts with resale permissions.', 'Resale clauses assume transferable value, while C3 limits the baseline to inspection and viewing.');
+    }
+    if (state.core === 'C3' && ['S2', 'S3', 'S4'].includes(state.hosting)) {
+      add('blocked', 'View-Only Core conflicts with hosted exploitation modules.', 'Public, named-customer, or managed-service hosting assumes operational use beyond inspection and viewing.');
+    }
+    if (state.core === 'C3' && state.education.includes('SC')) {
+      add('conflicts', 'View-Only Core conflicts with student copying.', 'Student copying creates reproduction rights that exceed a strict inspection-and-viewing baseline.');
     }
     if (state.core === 'C3' && ['P1', 'P2', 'P4'].includes(state.patent)) {
-      warnings.push({
-        title: 'View-Only Core with patent grant needs review.',
-        detail: 'A patent grant may be broader than the practical rights available under a strict view-only copyright core.',
-      });
+      add('risks', 'View-Only Core with patent grant needs review.', 'A patent grant may be broader than the practical rights available under a strict view-only copyright core.');
     }
     if (state.core === 'C5' && ['MC', 'IC', 'SM', 'CW'].includes(state.commercial)) {
-      warnings.push({
-        title: 'Community Source Core is being commercially narrowed or overridden.',
-        detail: 'C5 reads as community-oriented and non-commercial by default. The selected commercial module must clearly explain whether it overrides or narrows that baseline.',
-      });
+      add('risks', 'Community Source Core is being commercially narrowed or overridden.', `Core says community/non-commercial default; Commercial module currently sets ${state.commercial}. Treat this as an explicit override or clarify it in the license text.`);
     }
 
-    return warnings;
+    if (['NT', 'AT', 'RA', 'LA'].includes(state.ai) && ['MC', 'SM', 'CW', 'IC'].includes(state.commercial)) {
+      add('risks', 'AI/commercial boundary is active.', 'Commercial use is allowed, but ML training/evaluation is blocked or permission-only. Companies with AI pipelines should review data-handling boundaries.');
+    }
+    if (state.ethics.length > 0) {
+      add('risks', 'Ethical restrictions are field-of-use limits.', 'Ethical-use restrictions may increase review burden and may affect open-source classification.');
+    }
+    if (metadataIncomplete) {
+      add('risks', 'Project metadata is incomplete.', 'Generated artifacts still contain placeholder-like fields for project, licensor, year, contact, or project URL details.');
+    }
+    if (restrictiveModuleCount >= 9) {
+      add('risks', 'High restriction density.', 'Many modules stack at once. Adoption friction is likely and a golden preset may be easier to review.');
+    }
+    if (presetDrift.distance > 0) {
+      add('notes', 'Custom variant warning.', 'This configuration differs from the nearest golden preset. The preset matrix is only a reference point; review the generated text, active modules, and pinned hash.');
+    }
+    add('notes', 'Third-party dependencies are separate.', 'This generated license applies to your work, not automatically to third-party dependencies that may carry their own license terms.');
+
+    return findings;
+  }, [metadataIncomplete, presetDrift.distance, restrictiveModuleCount, state]);
+  const hasBlockedFindings = reviewFindings.blocked.length > 0;
+  const exportRequiresAcknowledgement = hasBlockedFindings && !acknowledgedBlockedExport;
+  const scenarioRows = useMemo(() => {
+    const commercialBlocked = state.commercial === 'NC';
+    const aiBlocked = ['NT', 'AT', 'RA', 'LA'].includes(state.ai);
+    const hostingBlocked = ['S0', 'S1', 'S3', 'S4'].includes(state.hosting);
+    const resaleBlocked = state.resale === 'NR' || state.redistribution === 'R0' || state.commercial === 'NC';
+    const modificationBlocked = state.modification === 'M0' || state.core === 'C3';
+
+    return [
+      {
+        scenario: 'A company uses the work internally',
+        status: state.core === 'C3' ? 'Needs review' : 'Allowed',
+        detail: state.core === 'C3'
+          ? 'C3 allows viewing and inspection, not broad internal operational use.'
+          : 'Internal use is generally compatible with the selected core, subject to commercial, patent, and compliance duties.',
+      },
+      {
+        scenario: 'A SaaS clone hosts the work publicly',
+        status: hostingBlocked ? 'Blocked' : 'Needs review',
+        detail: hostingBlocked
+          ? 'The hosting module blocks or narrows public hosted-service use.'
+          : 'Hosted use is not directly blocked, but attribution, network, commercial, and dependency obligations still apply.',
+      },
+      {
+        scenario: 'An AI lab scrapes the work for model training',
+        status: aiBlocked ? 'Blocked' : 'Allowed',
+        detail: aiBlocked
+          ? 'The AI module blocks or requires separate permission for training, evaluation, scraping, or model-development use.'
+          : 'The selected AI module does not block model training by default.',
+      },
+      {
+        scenario: 'A school uses the work in class',
+        status: state.education.some((item) => ['ED', 'CL', 'SC', 'RE'].includes(item)) ? 'Allowed' : 'Needs review',
+        detail: state.education.length > 0
+          ? 'Education or research modules create an express classroom/research pathway, subject to any course-extraction limits.'
+          : 'No education module is selected, so classroom use depends on the core and other modules.',
+      },
+      {
+        scenario: 'A company sells a modified fork',
+        status: resaleBlocked || modificationBlocked ? 'Blocked' : 'Needs review',
+        detail: resaleBlocked || modificationBlocked
+          ? 'Commercial, resale, redistribution, or modification modules block this pathway.'
+          : 'This may be possible, but derivative, attribution, source-disclosure, and branding duties need review.',
+      },
+      {
+        scenario: 'A proprietary product includes PLF-covered code',
+        status: commercialBlocked ? 'Blocked' : 'Needs review',
+        detail: commercialBlocked
+          ? 'Non-commercial terms block proprietary commercial product use unless separately licensed.'
+          : 'Possible in some cases, but inbound/outbound boundaries and third-party dependency licenses must be checked.',
+      },
+    ];
   }, [state]);
+  const reviewSummaryText = useMemo(
+    () =>
+      buildReviewSummaryText(
+        licenseCode,
+        selectedPreset,
+        legalTextHash,
+        presetDrift,
+        legalRiskBadges,
+        reviewFindings,
+        scenarioRows,
+      ),
+    [legalRiskBadges, legalTextHash, licenseCode, presetDrift, reviewFindings, scenarioRows, selectedPreset],
+  );
+  const parsedVariant = useMemo(
+    () => parseVariantCode(variantImportInput),
+    [variantImportInput],
+  );
+  const variantImportChanges = useMemo(() => {
+    if (!parsedVariant.state) {
+      return [];
+    }
+
+    return getStateDiff(state, parsedVariant.state);
+  }, [parsedVariant.state, state]);
+
+  const markConfigurationChanged = () => {
+    setGeneratedAt(new Date().toISOString());
+    setAcknowledgedBlockedExport(false);
+  };
 
   const applyPreset = (presetName) => {
+    markConfigurationChanged();
     setState(PRESETS[presetName].state);
     setSelectedPreset(presetName);
+    setLastIntentSummary(null);
   };
 
   const applyIntent = (intentKey) => {
     const intent = INTENT_PATHS[intentKey];
 
+    markConfigurationChanged();
+    setLastIntentSummary({
+      label: intent.label,
+      problem: intent.problem,
+      outcome: intent.outcome,
+      assumptions: intent.assumptions,
+      changes: getStateDiff(state, intent.state),
+    });
     setState(intent.state);
     setSelectedPreset(`Intent: ${intent.label}`);
   };
 
   const handleRadio = (categoryId, value) => {
+    markConfigurationChanged();
     setSelectedPreset('Custom');
+    setLastIntentSummary(null);
     setState((prev) => ({ ...prev, [categoryId]: value }));
   };
 
   const handleCheckbox = (categoryId, value) => {
+    markConfigurationChanged();
     setSelectedPreset('Custom');
+    setLastIntentSummary(null);
     setState((prev) => {
       const current = prev[categoryId];
 
@@ -1249,14 +1650,73 @@ export default function App() {
     });
   };
 
+  const handleMetadataChange = (field, value) => {
+    setGeneratedAt(new Date().toISOString());
+    setMetadata((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const applyParsedVariant = () => {
+    if (!parsedVariant.ok || !parsedVariant.state) {
+      return;
+    }
+
+    markConfigurationChanged();
+    setState(parsedVariant.state);
+    setSelectedPreset('Imported variant code');
+    setLastIntentSummary(null);
+  };
+
   const copyText = async (textToCopy, target) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
       setCopiedTarget(target);
       window.setTimeout(() => setCopiedTarget(''), 2000);
+      return true;
     } catch (error) {
       console.error('Failed to copy text:', error);
+      return false;
     }
+  };
+
+  const copyArtifact = async (textToCopy, target) => {
+    if (exportRequiresAcknowledgement) {
+      return;
+    }
+
+    const copied = await copyText(textToCopy, target);
+
+    if (copied) {
+      setExportedLegalText(legalText);
+    }
+  };
+
+  const downloadArtifact = (filename, text) => {
+    if (exportRequiresAcknowledgement) {
+      return;
+    }
+
+    downloadText(filename, text);
+    setExportedLegalText(legalText);
+  };
+
+  const printReviewSummary = () => {
+    const printWindow = window.open('', '_blank');
+
+    if (!printWindow) {
+      copyText(reviewSummaryText, 'review-summary');
+      return;
+    }
+
+    const pre = printWindow.document.createElement('pre');
+    pre.textContent = reviewSummaryText;
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+    pre.style.fontSize = '12px';
+    pre.style.lineHeight = '1.5';
+    pre.style.padding = '24px';
+    printWindow.document.body.appendChild(pre);
+    printWindow.document.title = `PLF Review Summary ${licenseCode}`;
+    printWindow.print();
   };
 
   return (
@@ -1331,6 +1791,75 @@ export default function App() {
             </p>
           </div>
 
+          <div className="mb-8 rounded-xl border border-cyan-200 bg-cyan-50 p-4">
+            <p className="text-sm font-semibold text-cyan-950">Paste a variant code</p>
+            <p className="mt-1 text-xs leading-relaxed text-cyan-900/80">
+              Paste a copied license variant name, SPDX header, or <span className="font-mono">LicenseRef-PLF-1.0-...</span> identifier to reconstruct the generator selections.
+            </p>
+            <textarea
+              aria-label="Paste PLF variant code"
+              value={variantImportInput}
+              onChange={(event) => setVariantImportInput(event.target.value)}
+              rows={3}
+              placeholder="LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE"
+              className="mt-3 w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+            />
+            <div className="mt-3 rounded-lg border border-cyan-200 bg-white/70 px-3 py-3 text-xs text-cyan-950">
+              <p className="font-semibold">{parsedVariant.code || 'No variant detected yet'}</p>
+              <p className="mt-1">{parsedVariant.message}</p>
+              {parsedVariant.unknownTokens.length > 0 ? (
+                <p className="mt-1 text-rose-700">
+                  Unknown tokens: <span className="font-mono">{parsedVariant.unknownTokens.join(', ')}</span>
+                </p>
+              ) : null}
+              {variantImportChanges.length > 0 ? (
+                <p className="mt-1">
+                  Applying this code changes {variantImportChanges.length} factor{variantImportChanges.length === 1 ? '' : 's'}.
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={applyParsedVariant}
+              disabled={!parsedVariant.ok}
+              className="mt-3 w-full rounded-lg border border-cyan-300 bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cyan-800 disabled:cursor-not-allowed disabled:border-cyan-200 disabled:bg-cyan-100 disabled:text-cyan-500"
+            >
+              Apply pasted variant
+            </button>
+          </div>
+
+          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-900">Project metadata</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              These fields flow into LICENSE, NOTICE, README, contributor policy, exception notice, and registry exports.
+            </p>
+            <div className="mt-4 space-y-3">
+              {[
+                ['projectName', 'Project name', 'Example: Prism License Framework Generator'],
+                ['licensorName', 'Licensor name', 'Example: Astroclub Labs'],
+                ['copyrightYear', 'Copyright year', '2026'],
+                ['contact', 'Contact URL/email', 'licensing@example.com'],
+                ['projectUrl', 'Project URL', 'https://example.com/project'],
+              ].map(([field, label, placeholder]) => (
+                <label key={field} className="block">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+                  <input
+                    aria-label={label}
+                    value={metadata[field]}
+                    onChange={(event) => handleMetadataChange(field, event.target.value)}
+                    placeholder={placeholder}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                </label>
+              ))}
+            </div>
+            {metadataIncomplete ? (
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Metadata incomplete: project, licensor, year, contact, or project URL details are not customized yet.
+              </p>
+            ) : null}
+          </div>
+
           <div className="space-y-8">
             {CATEGORIES.map((category) => (
               <div key={category.id} className="border-b border-slate-100 pb-6 last:border-0">
@@ -1391,15 +1920,74 @@ export default function App() {
             <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-md font-mono font-bold text-sm border border-blue-200 shadow-sm break-all">
               {licenseCode}
             </div>
-            <button
-              type="button"
-              onClick={() => copyText(legalText, 'legal')}
-              className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium text-slate-700 transition-colors shadow-sm"
-            >
-              {copiedTarget === 'legal' ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-              {copiedTarget === 'legal' ? 'Copied!' : 'Copy License Text'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => copyText(licenseCode, 'variant-code')}
+                className="flex items-center gap-2 bg-blue-900 border border-blue-900 hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors shadow-sm"
+              >
+                {copiedTarget === 'variant-code' ? <Check size={16} className="text-green-200" /> : <Copy size={16} />}
+                {copiedTarget === 'variant-code' ? 'Copied!' : 'Copy variant code'}
+              </button>
+              <button
+                type="button"
+                onClick={() => copyArtifact(legalText, 'legal')}
+                disabled={exportRequiresAcknowledgement}
+                className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium text-slate-700 transition-colors shadow-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                {copiedTarget === 'legal' ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                {copiedTarget === 'legal' ? 'Copied!' : 'Copy LICENSE'}
+              </button>
+            </div>
           </div>
+
+          <div className={`mb-4 rounded-xl border px-4 py-4 text-sm shadow-sm ${isLikelyNotOsiOpenSource ? 'border-orange-200 bg-orange-50 text-orange-950' : 'border-emerald-200 bg-emerald-50 text-emerald-950'}`}>
+            <p className="font-semibold">
+              Classification: {isLikelyNotOsiOpenSource ? 'Source-available / Not necessarily OSI-open-source' : 'Low-restriction source-sharing profile'}
+            </p>
+            <p className="mt-1">
+              {isLikelyNotOsiOpenSource
+                ? 'Reason: this variant contains field-of-use, commercial, AI-training, SaaS, ethical-use, or operational restrictions that may conflict with open-source definitions.'
+                : 'Reason: no current high-friction field-of-use, commercial, AI-training, SaaS, or ethical-use restriction is active under the generator rules.'}
+            </p>
+            {(state.patent === 'None' || state.patent === 'P0') ? (
+              <p className="mt-2 rounded-lg border border-rose-200 bg-white/70 px-3 py-2 font-semibold text-rose-800">
+                Patent review warning: No explicit patent grant. Enterprise review likely.
+              </p>
+            ) : null}
+            {exportIsStale ? (
+              <p className="mt-2 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 font-semibold text-amber-900">
+                License text changed. Re-copy exports before publishing.
+              </p>
+            ) : null}
+          </div>
+
+          {lastIntentSummary ? (
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-950 shadow-sm">
+              <p className="font-semibold">Intent path applied: {lastIntentSummary.label}</p>
+              <p className="mt-1 text-emerald-900/80">{lastIntentSummary.outcome}</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-emerald-200 bg-white/70 px-3 py-3">
+                  <p className="font-medium">Assumptions made</p>
+                  <ul className="mt-2 space-y-2">
+                    {lastIntentSummary.assumptions.map((assumption) => (
+                      <li key={assumption}>{assumption}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-emerald-200 bg-white/70 px-3 py-3">
+                  <p className="font-medium">Changed factors</p>
+                  <ul className="mt-2 space-y-2">
+                    {(lastIntentSummary.changes.length > 0 ? lastIntentSummary.changes : [{ category: 'No factor', from: 'changed', to: 'same' }]).slice(0, 8).map((change) => (
+                      <li key={`${change.category}-${change.to}`}>
+                        <span className="font-semibold">{change.category}:</span> <span className="font-mono">{change.from}</span> to <span className="font-mono">{change.to}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-4 text-sm text-indigo-950 shadow-sm">
             <p className="font-semibold">Because you selected this</p>
@@ -1451,60 +2039,117 @@ export default function App() {
                 : `Custom variant: ${presetDrift.distance} changes from ${presetDrift.presetName}. Review burden likely increased.`}
             </p>
             {presetDrift.distance > 0 ? (
-              <div className="mt-4 space-y-3">
-                {presetDrift.changes.slice(0, 6).map((change) => (
-                  <div key={change.category} className="rounded-lg border border-fuchsia-200 bg-white/70 px-3 py-3">
-                    <p className="font-medium">{change.category}</p>
-                    <p className="mt-1 text-fuchsia-900/80">
-                      Canonical: <span className="font-mono">{change.from}</span> / Current: <span className="font-mono">{change.to}</span>
-                    </p>
-                    <p className="mt-1 text-fuchsia-900/80">{change.reviewImpact}</p>
-                  </div>
-                ))}
+              <div className="mt-4 overflow-x-auto rounded-lg border border-fuchsia-200 bg-white/70">
+                <table className="min-w-full divide-y divide-fuchsia-200 text-left text-xs">
+                  <thead className="bg-fuchsia-100/70 text-fuchsia-950">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 font-semibold">Category</th>
+                      <th scope="col" className="px-3 py-2 font-semibold">Preset value</th>
+                      <th scope="col" className="px-3 py-2 font-semibold">Current value</th>
+                      <th scope="col" className="px-3 py-2 font-semibold">Review impact</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-fuchsia-100">
+                    {presetDrift.changes.map((change) => (
+                      <tr key={change.category}>
+                        <td className="px-3 py-2 font-semibold">{change.category}</td>
+                        <td className="px-3 py-2 font-mono">{change.from}</td>
+                        <td className="px-3 py-2 font-mono">{change.to}</td>
+                        <td className="px-3 py-2">{change.reviewImpact}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : null}
           </div>
 
           <div className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-800 shadow-sm">
             <p className="font-semibold text-slate-900">Export artifacts</p>
+            {exportRequiresAcknowledgement ? (
+              <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-3 text-rose-900">
+                <p className="font-semibold">Blocked findings need acknowledgement before export.</p>
+                <p className="mt-1 text-rose-800/90">
+                  This does not make the variant safe. It prevents accidental export of a hard contradiction without an explicit custom-review acknowledgement.
+                </p>
+                <label className="mt-3 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={acknowledgedBlockedExport}
+                    onChange={(event) => setAcknowledgedBlockedExport(event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-rose-300 text-rose-700 focus:ring-rose-500"
+                  />
+                  <span>I understand this is a custom/legal-review-required variant and want to enable exports.</span>
+                </label>
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {[
-                ['legal', 'Copy legal code', legalText],
+                ['legal', 'Copy LICENSE', legalText, false],
+                ['notice', 'Copy NOTICE', noticeText, !noticeRequired],
                 ['deed', 'Copy human deed', humanDeedText],
-                ['spdx', 'Copy SPDX header', `SPDX-License-Identifier: ${spdxLicenseRef}`],
+                ['spdx', 'Copy SPDX Header', `SPDX-License-Identifier: ${spdxLicenseRef}`],
                 ['package', 'Copy package.json snippet', packageJsonSnippet],
                 ['readme', 'Copy README license section', readmeLicenseSection],
                 ['registry', 'Copy registry entry', registryEntryText],
-              ].map(([target, label, text]) => (
+                ['contributor', 'Copy contributor policy', contributorPolicyText],
+                ['exception', 'Copy commercial exception notice', commercialExceptionText],
+                ['review-summary', 'Copy review summary', reviewSummaryText],
+              ].map(([target, label, text, disabledForRelevance]) => (
                 <button
                   key={target}
                   type="button"
-                  onClick={() => copyText(text, target)}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  onClick={() => copyArtifact(text, target)}
+                  disabled={exportRequiresAcknowledgement || disabledForRelevance}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
-                  <span>{label}</span>
+                  <span>
+                    <span className="block">{label}</span>
+                    {disabledForRelevance ? (
+                      <span className="mt-1 block text-xs font-normal text-slate-400">NOTICE optional for this variant.</span>
+                    ) : null}
+                  </span>
                   {copiedTarget === target ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
                 </button>
               ))}
               {[
                 ['LICENSE', 'Download LICENSE', legalText],
-                ['NOTICE', 'Download NOTICE', noticeText],
+                ['NOTICE', 'Download NOTICE', noticeText, !noticeRequired],
                 ['README-license-section.md', 'Download README section', readmeLicenseSection],
                 ['plf-registry-entry.json', 'Download registry entry', registryEntryText],
-              ].map(([filename, label, text]) => (
+                ['CONTRIBUTING-LICENSE.md', 'Download contributor policy', contributorPolicyText],
+                ['COMMERCIAL-EXCEPTION.md', 'Download exception notice', commercialExceptionText],
+              ].map(([filename, label, text, disabledForRelevance]) => (
                 <button
                   key={filename}
                   type="button"
-                  onClick={() => downloadText(filename, text)}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  onClick={() => downloadArtifact(filename, text)}
+                  disabled={exportRequiresAcknowledgement || disabledForRelevance}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
-                  <span>{label}</span>
+                  <span>
+                    <span className="block">{label}</span>
+                    {disabledForRelevance ? (
+                      <span className="mt-1 block text-xs font-normal text-slate-400">NOTICE optional for this variant.</span>
+                    ) : null}
+                  </span>
                   <Download size={16} />
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={printReviewSummary}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                <span>Print review summary</span>
+                <Download size={16} />
+              </button>
             </div>
             <p className="mt-3 text-xs text-slate-500">
               Legal text hash: <span className="font-mono">{legalTextHash || 'calculating'}</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Registry entries use generator version {GENERATOR_VERSION}, PLF version {PLF_VERSION}, and hash input: exact LICENSE text UTF-8.
             </p>
           </div>
 
@@ -1515,8 +2160,9 @@ export default function App() {
                 <button
                   key={language}
                   type="button"
-                  onClick={() => copyText(snippet, `header-${language}`)}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  onClick={() => copyArtifact(snippet, `header-${language}`)}
+                  disabled={exportRequiresAcknowledgement}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <span>{language}</span>
                   {copiedTarget === `header-${language}` ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
@@ -1555,29 +2201,83 @@ export default function App() {
             </div>
           </div>
 
-          {conflictWarnings.length > 0 ? (
-            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950 shadow-sm">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-semibold">Conflict detection</p>
-                  <div className="mt-3 space-y-3">
-                    {conflictWarnings.map((warning) => (
-                      <div key={warning.title}>
-                        <p className="font-medium">⚠ {warning.title}</p>
-                        <p className="mt-1 text-rose-900/80">{warning.detail}</p>
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-950 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+              <div className="w-full">
+                <p className="font-semibold">Review findings</p>
+                <p className="mt-1 text-rose-900/80">
+                  Severity is text-labeled, not color-only: Blocked, Conflict, Redundancy, Review risk, and Helpful note.
+                </p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {[
+                    ['Blocked', reviewFindings.blocked, 'border-rose-300 bg-white/80'],
+                    ['Conflict', reviewFindings.conflicts, 'border-orange-300 bg-white/80'],
+                    ['Redundancy', reviewFindings.redundancies, 'border-amber-300 bg-white/80'],
+                    ['Review risk', reviewFindings.risks, 'border-fuchsia-300 bg-white/80'],
+                    ['Helpful note', reviewFindings.notes, 'border-slate-300 bg-white/80'],
+                  ].map(([label, findings, cardClass]) => (
+                    <div key={label} className={`rounded-lg border px-3 py-3 ${cardClass}`}>
+                      <p className="font-semibold">{label}</p>
+                      <div className="mt-2 space-y-3">
+                        {findings.length > 0 ? findings.map((finding) => (
+                          <div key={finding.title}>
+                            <p className="font-medium">{finding.title}</p>
+                            <p className="mt-1 text-rose-900/80">{finding.detail}</p>
+                          </div>
+                        )) : (
+                          <p className="text-rose-900/70">No finding in this severity bucket.</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          ) : null}
+          </div>
+
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-950 shadow-sm">
+            <p className="font-semibold">Scenario preview</p>
+            <p className="mt-1 text-emerald-900/80">
+              Concrete examples help reviewers understand the practical boundary before reading the legal code.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {scenarioRows.map((row) => (
+                <div key={row.scenario} className="rounded-lg border border-emerald-200 bg-white/70 px-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{row.scenario}</p>
+                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide">
+                      {row.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-emerald-900/80">{row.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-4 text-sm text-violet-950 shadow-sm">
+            <p className="font-semibold">License family comparison</p>
+            <p className="mt-1 text-violet-900/80">
+              Educational comparison only. Inspired-by lineage does not mean compatibility or legal equivalence.
+            </p>
+            <div className="mt-4 space-y-3">
+              {LICENSE_FAMILY_COMPARISON.map((item) => (
+                <div key={item.family} className="rounded-lg border border-violet-200 bg-white/70 px-3 py-3">
+                  <p className="font-medium">{item.family}</p>
+                  <p className="mt-1 text-violet-900/80">{item.posture}</p>
+                  <p className="mt-1 text-violet-900/80">{item.whenToUse}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-950 shadow-sm">
             <p className="font-semibold">Compatibility snapshot</p>
             <p className="mt-1 text-emerald-900/80">
-              Guidance for inbound/outbound review. This is a triage aid for legal teams, not a substitute for counsel.
+              {presetDrift.distance > 0
+                ? 'Custom variant: re-review required. The nearest preset is only a reference point.'
+                : 'Canonical preset match. Guidance for inbound/outbound review is still a triage aid, not a substitute for counsel.'}
             </p>
             <div className="mt-4 space-y-3">
               {compatibilityRows.map((row) => (
@@ -1604,6 +2304,13 @@ export default function App() {
               <p className="mt-4 text-sm text-slate-500 font-bold uppercase tracking-widest">
                 Terms and Conditions for Use, Reproduction, Distribution, and Deployment
               </p>
+              <div className="mt-6 grid gap-2 text-left text-sm text-slate-600 md:grid-cols-2">
+                <p><strong>Work:</strong> {formatMetadataValue(metadata.projectName, '[Insert project or work name]')}</p>
+                <p><strong>Licensor:</strong> {formatMetadataValue(metadata.licensorName, '[Insert licensor name]')}</p>
+                <p><strong>Copyright Year:</strong> {formatMetadataValue(metadata.copyrightYear, '[Insert year]')}</p>
+                <p><strong>Contact:</strong> {formatMetadataValue(metadata.contact, '[Insert contact URL or email]')}</p>
+                <p className="md:col-span-2"><strong>Project URL:</strong> {formatMetadataValue(metadata.projectUrl, '[Insert project URL]')}</p>
+              </div>
             </div>
 
             <p className="text-sm italic mb-8 font-medium">
@@ -1614,6 +2321,9 @@ export default function App() {
             <p className="mb-4 text-sm text-slate-600">
               Selection: <strong>{selectedPreset}</strong>. This plain-English summary is designed for managers, compliance teams, and procurement reviewers before they dive into the legal code.
             </p>
+            <p className="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+              This deed is non-normative. The legal code controls.
+            </p>
             <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">
               {deedBullets.map((bullet) => (
                 <li key={bullet} className="rounded border border-slate-200 bg-slate-50 px-4 py-3">
@@ -1621,6 +2331,18 @@ export default function App() {
                 </li>
               ))}
             </ul>
+            {legalRiskBadges.length > 0 ? (
+              <>
+                <h4 className="text-base font-bold mb-3">Review-Sensitive Flags</h4>
+                <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">
+                  {legalRiskBadges.map((badge) => (
+                    <li key={badge.title} className="rounded border border-orange-200 bg-orange-50 px-4 py-3">
+                      <strong>{badge.title}:</strong> {badge.detail}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
 
             <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">1. Definitions</h3>
             <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">

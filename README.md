@@ -178,11 +178,52 @@ The generator UI also now includes:
 - intent-first entry paths for common creator problems
 - consequence feedback explaining allowed, blocked, required, and review-sensitive outcomes
 - plain-English clause explanations for every toggle
+- pasteable variant-code import for `PLF-1.0-...` and `LicenseRef-PLF-1.0-...` identifiers
+- project metadata fields for project name, licensor, copyright year, contact, and project URL
+- severity-split findings for blocked contradictions, conflicts, redundancies, review risks, and helpful notes
 - expanded conflict and risk warnings for combinations likely to confuse reviewers
-- preset-drift tracking for custom one-off variants
+- preset-drift tracking with category-level preset/current/review-impact rows
+- source-available classification and "why this may not be open source" reasoning per variant
+- live SHA-256 hash display and stale-export warning after changes
 - copy and download exports for license artifacts
+- conditional NOTICE export behavior when attribution or branding modules require it
+- contributor policy and commercial exception notice exports
+- scenario previews and a dynamic compatibility snapshot
 - lineage notes explaining which familiar licensing traditions inspired each section
-- a compatibility snapshot for inbound and outbound review conversations
+- a compact comparison against MIT, Apache-2.0, GPL/AGPL, and source-available families
+
+## Variant Code Import
+
+Every generated variant has a copyable code such as:
+
+```text
+PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE-PR-SR
+```
+
+The UI can also read pasted identifiers such as:
+
+```text
+LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE-PR-SR
+```
+
+Paste the code into the "Paste a variant code" panel and the generator reconstructs the selected core, radio factors, and checkbox modules. Unknown tokens are rejected instead of silently ignored, because a license-code importer should not pretend to understand future or malformed clauses.
+
+## Export Model
+
+The generator is designed to produce the artifacts a real repository needs:
+
+- `LICENSE`
+- conditional `NOTICE`
+- human-readable deed
+- SPDX source headers for JS/TS, Python, HTML, CSS, Markdown, and Shell
+- npm-compatible `package.json` snippet
+- README license section
+- registry entry with PLF version, generator version, hash method, hash input, timestamp, preset base, and custom drift count
+- contributor policy starter
+- commercial exception notice starter
+- printable review summary
+
+If a hard contradiction is detected, exports are locked until the user acknowledges that the result is a custom/legal-review-required variant. That acknowledgement is friction, not legal approval.
 
 ## Legal Review Docs
 
@@ -253,3 +294,7 @@ git push -u origin main
 ## Legal Note
 
 PLF is a framework generator and drafting tool. It is not legal advice, and production use for significant commercial rights or cross-jurisdiction enforcement should be reviewed by qualified counsel.
+
+Generated PLF text applies to the licensor's own work. It does not automatically relicense third-party dependencies, bundled assets, or inbound contributions that arrive under separate terms.
+
+For contributor-heavy projects, use the generated contributor policy starter or a separate contributor agreement so inbound and outbound licensing are explicit.
