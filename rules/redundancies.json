@@ -1,0 +1,21 @@
+{
+  "schema": "plf-rules/v1",
+  "description": "Review hints for valid but potentially repetitive module pairings.",
+  "rules": {
+    "BR": {
+      "redundantWith": ["WL"],
+      "title": "Branding restriction plus white-label ban is intentionally layered.",
+      "message": "BR controls trademark use while WL separately blocks hiding origin identity."
+    },
+    "BP": {
+      "redundantWith": ["WL"],
+      "title": "Permission-only branding plus white-label ban is intentionally layered.",
+      "message": "BP requires written brand permission, while WL separately blocks origin concealment."
+    },
+    "P1": {
+      "redundantWith": ["P4"],
+      "title": "P1 already contains a patent-aggression termination hook.",
+      "message": "P4 can still be used as an explicit defensive add-on, but reviewers should verify it is not duplicative."
+    }
+  }
+}

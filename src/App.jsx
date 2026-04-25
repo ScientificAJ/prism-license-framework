@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Check, Copy, Download, Info, ShieldCheck } from 'lucide-react';
+import conflictRules from '../rules/conflicts.json';
+import dormantModuleRules from '../rules/dormant-modules.json';
+import redundancyRules from '../rules/redundancies.json';
+import requirementRules from '../rules/requires.json';
+import reviewEscalationRules from '../rules/review-escalations.json';
 
 const PLF_VERSION = '1.0';
 const GENERATOR_VERSION = '0.1.0';
@@ -80,7 +85,13 @@ const LEGAL_TEXT = {
     P4: 'Defensive Patent Suspension (P4): Any patent rights otherwise available to You under this License are suspended immediately if You or an affiliate initiate offensive patent litigation concerning the Work, a Contributor implementation, or a materially compliant downstream distribution of the Work.',
 
     ED: 'Educational Reuse Allowed (ED): Accredited educational institutions and educators are expressly permitted to copy, adapt, and present the Work for non-profit pedagogical and teaching purposes, overriding standard commercial restrictions strictly within the context of a classroom.',
+    'ED-NP': 'Non-Profit Education Only (ED-NP): Any educational permission granted by this License is limited to non-profit teaching, study, or classroom activity. Tuition, salary, or institutional funding does not by itself make a use commercial, provided the Work is not sold or packaged as the primary paid offering.',
+    'ED-ACC': 'Accredited Institution Education Scope (ED-ACC): Educational permissions apply to accredited schools, colleges, universities, libraries, and comparable formally recognized educational institutions, including their faculty, staff, and enrolled students acting within the educational program.',
+    'ED-IND': 'Independent Educator Allowed (ED-IND): Independent educators, tutors, trainers, and workshop leaders may exercise the active educational permissions when the use is instructional, limited to enrolled learners or attendees, and not a competing extraction of the Work.',
+    'ED-CORP': 'Internal Corporate Training Allowed (ED-CORP): A Legal Entity may use the Work for internal employee or contractor training, onboarding, and professional-development programs, provided the Work is not resold, externally published as a course, or used as the primary value of a paid certification product.',
     CE: 'Course Extraction Restricted (CE): You shall not extract, adapt, or repackage the Work or substantial portions thereof to form the basis of a commercially competitive educational course, textbook, curriculum, formal certification program, or structured training material.',
+    'CE-COMP': 'Competing Course Ban (CE-COMP): You shall not use the Work as the substantial basis for a course, curriculum, training program, or tutorial product that competes with the Licensor\'s own educational offerings or materially substitutes for obtaining the Work from the Licensor.',
+    'CE-CERT': 'Certification Extraction Ban (CE-CERT): You shall not use the Work as the substantial basis for a paid certificate, credential, examination, assessment bank, or certification-preparation program without separate written permission from the Licensor.',
     RE: 'Research Reuse Allowed (RE): Non-commercial academic and independent research use of the Work, including adaptation, experimentation, benchmarking, and publication of research findings, is expressly permitted so long as such use remains otherwise compliant with the active Modules of this License.',
     CL: 'Classroom Display and Demonstration (CL): Educators and trainers may publicly display, perform, and demonstrate the Work in classroom, workshop, seminar, and internal training contexts, provided such activities are not themselves structured as a competing commercial extraction of the Work.',
     SC: 'Student Copying Allowed (SC): Students, trainees, and workshop participants may receive, reproduce, and retain individual copies of the Work for study, coursework, and portfolio review, provided such copies are not resold or redistributed outside the relevant educational context except as otherwise permitted by active Modules.',
@@ -224,6 +235,13 @@ const CATEGORIES = [
       { val: 'BN', label: 'BN - Nominative Branding Only' },
       { val: 'BR', label: 'BR - Branding Restricted' },
       { val: 'BP', label: 'BP - Branding by Permission' },
+    ],
+  },
+  {
+    id: 'brandingAddOns',
+    title: 'Branding Add-ons',
+    type: 'checkbox',
+    options: [
       { val: 'WL', label: 'WL - No White-Label Rebranding' },
     ],
   },
@@ -263,6 +281,13 @@ const CATEGORIES = [
       { val: 'P1', label: 'P1 - Limited Patent License' },
       { val: 'P2', label: 'P2 - Broad Patent Grant' },
       { val: 'P3', label: 'P3 - Evaluation Non-Assert' },
+    ],
+  },
+  {
+    id: 'patentDefense',
+    title: 'Patent Defense Add-ons',
+    type: 'checkbox',
+    options: [
       { val: 'P4', label: 'P4 - Defensive Suspension' },
     ],
   },
@@ -272,7 +297,13 @@ const CATEGORIES = [
     type: 'checkbox',
     options: [
       { val: 'ED', label: 'ED - Educational Reuse Allowed' },
+      { val: 'ED-NP', label: 'ED-NP - Non-Profit Education Only' },
+      { val: 'ED-ACC', label: 'ED-ACC - Accredited Institutions Only' },
+      { val: 'ED-IND', label: 'ED-IND - Independent Educators Allowed' },
+      { val: 'ED-CORP', label: 'ED-CORP - Internal Corporate Training Allowed' },
       { val: 'CE', label: 'CE - Course Extraction Restricted' },
+      { val: 'CE-COMP', label: 'CE-COMP - Competing Course Banned' },
+      { val: 'CE-CERT', label: 'CE-CERT - Certification Extraction Banned' },
       { val: 'RE', label: 'RE - Research Reuse Allowed' },
       { val: 'CL', label: 'CL - Classroom Display Right' },
       { val: 'SC', label: 'SC - Student Copying Allowed' },
@@ -308,9 +339,11 @@ const PRESETS = {
       ai: 'OA',
       ethics: [],
       branding: 'BN',
+      brandingAddOns: [],
       hosting: 'S2',
       network: 'None',
       patent: 'P1',
+      patentDefense: [],
       education: ['ED', 'RE', 'CL'],
       compliance: [],
     },
@@ -328,10 +361,12 @@ const PRESETS = {
       ai: 'AT',
       ethics: ['NS'],
       branding: 'BR',
+      brandingAddOns: ['WL'],
       hosting: 'S3',
       network: 'N3',
       patent: 'P1',
-      education: ['CE', 'RE'],
+      patentDefense: ['P4'],
+      education: ['CE', 'CE-COMP', 'RE'],
       compliance: ['PR'],
     },
   },
@@ -348,10 +383,12 @@ const PRESETS = {
       ai: 'NT',
       ethics: ['NS', 'DS'],
       branding: 'BR',
+      brandingAddOns: ['WL'],
       hosting: 'S0',
       network: 'None',
-      patent: 'None',
-      education: ['CE'],
+      patent: 'P1',
+      patentDefense: ['P4'],
+      education: ['CE', 'CE-COMP', 'CE-CERT'],
       compliance: ['PR', 'SR'],
     },
   },
@@ -376,9 +413,11 @@ const INTENT_PATHS = {
       ai: 'NT',
       ethics: ['NS'],
       branding: 'BR',
+      brandingAddOns: [],
       hosting: 'S2',
       network: 'N3',
       patent: 'P1',
+      patentDefense: [],
       education: ['RE'],
       compliance: ['PR'],
     },
@@ -393,7 +432,7 @@ const INTENT_PATHS = {
     ],
     state: {
       core: 'C1',
-      attribution: 'A5',
+      attribution: 'A2',
       commercial: 'CW',
       modification: 'M2',
       redistribution: 'R2',
@@ -401,11 +440,13 @@ const INTENT_PATHS = {
       resale: 'NR',
       ai: 'AT',
       ethics: ['NS'],
-      branding: 'WL',
+      branding: 'BR',
+      brandingAddOns: ['WL'],
       hosting: 'S0',
       network: 'None',
       patent: 'P1',
-      education: ['CE', 'RE'],
+      patentDefense: ['P4'],
+      education: ['CE', 'CE-COMP', 'RE'],
       compliance: ['PR', 'SR'],
     },
   },
@@ -428,10 +469,12 @@ const INTENT_PATHS = {
       ai: 'AT',
       ethics: ['NS'],
       branding: 'BR',
+      brandingAddOns: [],
       hosting: 'S3',
       network: 'N3',
       patent: 'P1',
-      education: ['ED', 'RE'],
+      patentDefense: [],
+      education: ['ED', 'ED-NP', 'RE'],
       compliance: ['PR'],
     },
   },
@@ -454,9 +497,11 @@ const INTENT_PATHS = {
       ai: 'AT',
       ethics: [],
       branding: 'BR',
+      brandingAddOns: [],
       hosting: 'S3',
       network: 'N3',
       patent: 'P1',
+      patentDefense: [],
       education: ['RE'],
       compliance: ['PR'],
     },
@@ -481,7 +526,7 @@ const INTENT_PATHS = {
     ],
     state: {
       core: 'C2',
-      attribution: 'A3',
+      attribution: 'A',
       commercial: 'IC',
       modification: 'M1',
       redistribution: 'R0',
@@ -490,9 +535,11 @@ const INTENT_PATHS = {
       ai: 'LA',
       ethics: ['NS'],
       branding: 'BP',
+      brandingAddOns: [],
       hosting: 'S1',
       network: 'None',
       patent: 'P3',
+      patentDefense: [],
       education: [],
       compliance: ['PR', 'AU', 'SR'],
     },
@@ -549,9 +596,11 @@ const NONE_SUMMARIES = {
   resale: 'No standalone resale rule is added here.',
   ai: 'No extra AI-training rule is added here.',
   branding: 'No standalone branding rule is added here.',
+  brandingAddOns: 'No branding add-on restriction is added here.',
   hosting: 'No standalone hosted-service rule is added here.',
   network: 'No extra network reciprocity obligation is added here.',
   patent: 'No explicit patent term is added here.',
+  patentDefense: 'No patent defense add-on is added here.',
 };
 
 const OPTION_SUMMARIES = {
@@ -634,7 +683,13 @@ const OPTION_SUMMARIES = {
   P4: 'Suspends patent rights if the licensee launches offensive patent claims around the work.',
 
   ED: 'Lets educators reuse the work in non-profit teaching contexts.',
+  'ED-NP': 'Limits educational permissions to non-profit teaching and study contexts.',
+  'ED-ACC': 'Scopes education permissions to accredited or formally recognized institutions.',
+  'ED-IND': 'Lets independent educators use the work for instructional activity.',
+  'ED-CORP': 'Allows internal company training without opening paid external course use.',
   CE: 'Prevents turning the work into a competing commercial course or curriculum.',
+  'CE-COMP': 'Blocks courses or curricula that compete with the licensor’s educational offering.',
+  'CE-CERT': 'Blocks certification, credential, exam, or assessment extraction.',
   RE: 'Allows non-commercial research reuse, adaptation, and study.',
   CL: 'Allows classroom display, demos, and instruction use.',
   SC: 'Lets students keep copies for study or course participation.',
@@ -645,6 +700,16 @@ const OPTION_SUMMARIES = {
   SR: 'Requires a security review before high-risk deployment.',
   TR: 'Requires transparency reporting in large-scale or sensitive public deployments.',
 };
+
+const MODULE_RULES = {
+  conflicts: conflictRules,
+  dormant: dormantModuleRules,
+  redundancies: redundancyRules,
+  requires: requirementRules,
+  reviewEscalations: reviewEscalationRules,
+};
+
+const getRuleMap = (ruleFile) => ruleFile.rules ?? {};
 
 const getOptionSummary = (categoryId, optionValue) => {
   if (optionValue === 'None') {
@@ -666,13 +731,76 @@ const getActiveModulesForState = (licenseState) => {
   if (licenseState.ai !== 'None') modules.push(licenseState.ai);
   modules.push(...licenseState.ethics);
   if (licenseState.branding !== 'None') modules.push(licenseState.branding);
+  modules.push(...(licenseState.brandingAddOns ?? []));
   if (licenseState.hosting !== 'None') modules.push(licenseState.hosting);
   if (licenseState.network !== 'None') modules.push(licenseState.network);
   if (licenseState.patent !== 'None') modules.push(licenseState.patent);
+  modules.push(...(licenseState.patentDefense ?? []));
   modules.push(...licenseState.education);
   modules.push(...licenseState.compliance);
 
   return modules;
+};
+
+const getActiveTokensForState = (licenseState) =>
+  new Set([licenseState.core, ...getActiveModulesForState(licenseState)]);
+
+const getOptionRuleReason = (licenseState, optionValue) => {
+  if (optionValue === 'None') {
+    return '';
+  }
+
+  const activeTokens = getActiveTokensForState(licenseState);
+  const requirement = getRuleMap(MODULE_RULES.requires)[optionValue];
+
+  if (
+    requirement?.requiresAny?.length > 0 &&
+    !requirement.requiresAny.some((token) => activeTokens.has(token))
+  ) {
+    return requirement.message ?? `${optionValue} requires ${requirement.requiresAny.join(' or ')}.`;
+  }
+
+  const activeRuleReason = (ruleFile, relationKey) => {
+    const entries = Object.entries(getRuleMap(ruleFile));
+
+    for (const [sourceToken, rule] of entries) {
+      if (sourceToken === optionValue || !activeTokens.has(sourceToken)) {
+        continue;
+      }
+
+      if (rule[relationKey]?.includes(optionValue)) {
+        return rule.message ?? `${optionValue} should not be paired with ${sourceToken}.`;
+      }
+    }
+
+    return '';
+  };
+
+  return (
+    activeRuleReason(MODULE_RULES.conflicts, 'conflictsWith') ||
+    activeRuleReason(MODULE_RULES.dormant, 'dormantWith')
+  );
+};
+
+const normalizeLicenseState = (licenseState) => {
+  const nextState = { ...licenseState };
+
+  CATEGORIES.forEach((category) => {
+    if (category.type === 'checkbox') {
+      nextState[category.id] = (nextState[category.id] ?? []).filter(
+        (value) => !getOptionRuleReason(nextState, value),
+      );
+      return;
+    }
+
+    const value = nextState[category.id] ?? 'None';
+
+    if (value !== 'None' && getOptionRuleReason(nextState, value)) {
+      nextState[category.id] = 'None';
+    }
+  });
+
+  return nextState;
 };
 
 const buildLicenseCode = (licenseState, modules = getActiveModulesForState(licenseState)) =>
@@ -711,10 +839,32 @@ const parseVariantCode = (rawInput) => {
   }
 
   const code = codeMatch[1];
-  const tokens = code.replace('PLF-1.0-', '').split('-').filter(Boolean);
+  const rawSegments = code.replace('PLF-1.0-', '').split('-').filter(Boolean);
+  const optionTokens = CATEGORIES
+    .flatMap((category) => category.options.map((option) => option.val))
+    .filter((value) => value !== 'None')
+    .sort((left, right) => right.split('-').length - left.split('-').length || right.length - left.length);
+  const tokens = [];
   const nextState = createEmptyState();
   const unknownTokens = [];
   let hasCore = false;
+
+  for (let index = 0; index < rawSegments.length;) {
+    const matchedToken = optionTokens.find((candidate) => {
+      const candidateSegments = candidate.split('-');
+
+      return candidateSegments.every((segment, offset) => rawSegments[index + offset] === segment);
+    });
+
+    if (!matchedToken) {
+      unknownTokens.push(rawSegments[index]);
+      index += 1;
+      continue;
+    }
+
+    tokens.push(matchedToken);
+    index += matchedToken.split('-').length;
+  }
 
   tokens.forEach((token) => {
     const category = findCategoryForToken(token);
@@ -784,8 +934,10 @@ const getReviewImpact = (categoryId) => {
     compliance: 'Compliance duties add operational obligations that need owner and process review.',
     derivative: 'Derivative duties affect outbound sharing and combined-product obligations.',
     ethics: 'Ethical-use limits are field-of-use restrictions and may affect open-source classification.',
+    brandingAddOns: 'Branding add-ons layer restrictions over the selected trademark posture.',
     hosting: 'Hosting changes affect SaaS, managed-service, and cloud-product adoption.',
     patent: 'Patent posture is a common enterprise approval blocker.',
+    patentDefense: 'Patent defense add-ons only work when an actual patent grant or non-assert is present.',
     redistribution: 'Redistribution changes affect package, marketplace, and downstream transfer rights.',
     resale: 'Resale changes affect whether the work can become part of paid offerings.',
   };
@@ -840,8 +992,11 @@ const buildLegalText = (licenseState, modules, licenseCode, deedBullets, metadat
     '1. Definitions',
     '"License" shall mean the terms and conditions for use, reproduction, distribution, deployment, and related obligations as defined by this document.',
     '"Licensor" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.',
+    '"Contributor" shall mean any Licensor or other person or Legal Entity that intentionally submits a Contribution for inclusion in the Work.',
+    '"Contribution" shall mean any work of authorship, modification, patch, documentation, asset, or other material intentionally submitted for inclusion in the Work.',
     '"Legal Entity" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity.',
     '"You" (or "Licensee") shall mean an individual or Legal Entity exercising permissions granted by this License.',
+    '"Licensed Rights" shall mean the copyright, patent, and other permissions expressly granted under this License, as limited by the selected Core and active Modules.',
     '"Work" shall mean the work of authorship, whether in Source or Object form, made available under the License.',
     '"Derivative Work" shall mean any work, whether in Source or Object form, that is based on or derived from the Work and for which the modifications represent, as a whole, an original work of authorship.',
     '"Source" form shall mean the preferred form for making modifications, including software source code, documentation source, configuration files, and editable assets.',
@@ -1025,8 +1180,8 @@ export default function App() {
     [deedBullets, licenseCode, selectedPreset],
   );
   const noticeRequired = useMemo(
-    () => state.attribution !== 'None' || state.branding !== 'None',
-    [state.attribution, state.branding],
+    () => state.attribution !== 'None' || state.branding !== 'None' || state.brandingAddOns.length > 0,
+    [state.attribution, state.branding, state.brandingAddOns.length],
   );
   const noticeText = useMemo(
     () =>
@@ -1188,7 +1343,8 @@ export default function App() {
       ['NR', 'LR', 'CR', 'BS'].includes(state.resale) ||
       ['NT', 'AT', 'RA', 'LA'].includes(state.ai) ||
       state.ethics.length > 0 ||
-      ['BP', 'WL'].includes(state.branding) ||
+      state.branding === 'BP' ||
+      state.brandingAddOns.includes('WL') ||
       ['S0', 'S1', 'S3', 'S4'].includes(state.hosting) ||
       state.education.includes('CE') ||
       state.compliance.length > 0
@@ -1202,14 +1358,16 @@ export default function App() {
       state.resale,
       state.ai,
       state.branding,
+      ...state.brandingAddOns,
       state.hosting,
       state.network,
       state.patent,
+      ...state.patentDefense,
     ].filter((value) =>
-      ['NC', 'IC', 'SM', 'M0', 'M1', 'M3', 'M4', 'R0', 'R1', 'R3', 'R4', 'NR', 'LR', 'CR', 'BS', 'NT', 'AT', 'RA', 'LA', 'BR', 'BP', 'WL', 'S0', 'S1', 'S3', 'S4', 'N1', 'N2', 'N3', 'N4', 'N5', 'P0'].includes(value),
+      ['NC', 'IC', 'SM', 'M0', 'M1', 'M3', 'M4', 'R0', 'R1', 'R3', 'R4', 'NR', 'LR', 'CR', 'BS', 'NT', 'AT', 'RA', 'LA', 'BR', 'BP', 'WL', 'S0', 'S1', 'S3', 'S4', 'N1', 'N2', 'N3', 'N4', 'N5', 'P0', 'P4'].includes(value),
     ).length;
 
-    return restrictiveSingles + state.derivative.length + state.ethics.length + state.compliance.length + (state.education.includes('CE') ? 1 : 0);
+    return restrictiveSingles + state.derivative.length + state.ethics.length + state.compliance.length + state.education.filter((item) => item === 'CE' || item.startsWith('CE-')).length;
   }, [state]);
   const legalRiskBadges = useMemo(() => {
     const badges = [];
@@ -1226,6 +1384,12 @@ export default function App() {
         detail: 'This variant does not include an explicit patent grant. Enterprise adopters may require additional review or a separate patent permission.',
       });
     }
+    if (state.patentDefense.includes('P4') && !['P1', 'P2', 'P3'].includes(state.patent)) {
+      badges.push({
+        title: 'Patent add-on mismatch',
+        detail: 'Defensive patent suspension only makes sense when paired with P1, P2, or P3.',
+      });
+    }
     if (['NT', 'AT', 'RA', 'LA'].includes(state.ai) && ['MC', 'SM', 'CW', 'IC'].includes(state.commercial)) {
       badges.push({
         title: 'AI/commercial boundary',
@@ -1236,6 +1400,12 @@ export default function App() {
       badges.push({
         title: 'Field-of-use restriction',
         detail: 'Ethical-use limits are active. These may increase legal review burden and may affect open-source compatibility claims.',
+      });
+    }
+    if (state.education.includes('ED') && state.education.includes('CE') && state.commercial === 'NC') {
+      badges.push({
+        title: 'Education scope ambiguity',
+        detail: 'Educational reuse, course extraction limits, and non-commercial scope should be read together. Paid schools, bootcamps, corporate training, and certification products need explicit scope.',
       });
     }
     if (['S0', 'S3', 'S4'].includes(state.hosting)) {
@@ -1413,9 +1583,15 @@ export default function App() {
     state.compliance.forEach((value) => {
       obligations.push(getOptionSummary('compliance', value));
     });
-    if (state.branding === 'WL' || state.branding === 'BP' || state.branding === 'BR') {
+    if (state.branding === 'BP' || state.branding === 'BR') {
       obligations.push(getOptionSummary('branding', state.branding));
     }
+    state.brandingAddOns.forEach((value) => {
+      obligations.push(getOptionSummary('brandingAddOns', value));
+    });
+    state.patentDefense.forEach((value) => {
+      obligations.push(getOptionSummary('patentDefense', value));
+    });
 
     if (state.patent === 'P0' || state.patent === 'None') {
       review.push('Patent comfort is limited; counsel may want to review patent exposure.');
@@ -1443,15 +1619,51 @@ export default function App() {
       findings[bucket].push({ title, detail });
     };
 
-    if (state.modification === 'M0' && state.derivative.length > 0) {
-      add('blocked', 'No Modification conflicts with derivative obligations.', 'You selected derivative-work duties even though modification is prohibited. Export requires acknowledgement because this variant is likely ambiguous as written.');
-    }
-    if (state.modification === 'M1' && state.derivative.some((item) => ['SA', 'SD', 'MN', 'OC'].includes(item))) {
-      add('conflicts', 'Private Modification conflicts with public derivative duties.', 'Private-only modification makes public share-alike, source-disclosure, naming, or change-back duties hard to trigger. Clarify whether those duties apply only if another module permits distribution.');
-    }
-    if (state.redistribution === 'R1' && state.derivative.length > 0) {
-      add('conflicts', 'Unmodified Redistribution conflicts with derivative duties.', 'R1 allows only exact copies, while derivative duties assume modified versions may be distributed.');
-    }
+    const activeTokens = getActiveTokensForState(state);
+    const activeRuleTargets = (ruleFile, relationKey, sourceToken) =>
+      (getRuleMap(ruleFile)[sourceToken]?.[relationKey] ?? []).filter((targetToken) =>
+        activeTokens.has(targetToken),
+      );
+
+    Object.entries(getRuleMap(MODULE_RULES.requires)).forEach(([targetToken, rule]) => {
+      if (
+        activeTokens.has(targetToken) &&
+        rule.requiresAny?.length > 0 &&
+        !rule.requiresAny.some((sourceToken) => activeTokens.has(sourceToken))
+      ) {
+        add('blocked', rule.title ?? `${targetToken} is missing a required pairing.`, rule.message);
+      }
+    });
+
+    Object.entries(getRuleMap(MODULE_RULES.conflicts)).forEach(([sourceToken, rule]) => {
+      const activeTargets = activeRuleTargets(MODULE_RULES.conflicts, 'conflictsWith', sourceToken);
+
+      if (activeTokens.has(sourceToken) && activeTargets.length > 0) {
+        add('blocked', rule.title ?? `${sourceToken} conflicts with selected modules.`, `${rule.message} Active conflict target(s): ${activeTargets.join(', ')}.`);
+      }
+    });
+
+    Object.entries(getRuleMap(MODULE_RULES.dormant)).forEach(([sourceToken, rule]) => {
+      const activeTargets = activeRuleTargets(MODULE_RULES.dormant, 'dormantWith', sourceToken);
+
+      if (activeTokens.has(sourceToken) && activeTargets.length > 0) {
+        add('redundancies', rule.title ?? `${sourceToken} makes selected modules dormant.`, `${rule.message} Dormant target(s): ${activeTargets.join(', ')}.`);
+      }
+    });
+
+    Object.entries(getRuleMap(MODULE_RULES.redundancies)).forEach(([sourceToken, rule]) => {
+      const activeTargets = activeRuleTargets(MODULE_RULES.redundancies, 'redundantWith', sourceToken);
+
+      if (activeTokens.has(sourceToken) && activeTargets.length > 0) {
+        add('redundancies', rule.title ?? `${sourceToken} overlaps with selected modules.`, `${rule.message} Overlap target(s): ${activeTargets.join(', ')}.`);
+      }
+    });
+
+    Object.values(getRuleMap(MODULE_RULES.reviewEscalations)).forEach((rule) => {
+      if (rule.requiresAll?.every((token) => activeTokens.has(token))) {
+        add('risks', rule.title, rule.message);
+      }
+    });
 
     if (['MC', 'SM', 'CW'].includes(state.commercial) && state.resale === 'NR') {
       add('conflicts', 'Commercial Use conflicts with No Resale.', 'You allow some commercial activity, but you also prohibit selling the work itself. This can be valid, but many users will read it as contradictory unless the distinction is explained clearly.');
@@ -1463,19 +1675,6 @@ export default function App() {
 
     if (state.redistribution === 'R0' && ['LR', 'FR', 'CR', 'BS'].includes(state.resale)) {
       add('blocked', 'No Redistribution conflicts with the selected resale clause.', 'Resale presumes downstream transfer, but the redistribution clause blocks that transfer outright.');
-    }
-    if (state.redistribution === 'R0' && state.derivative.length > 0) {
-      add('redundancies', 'No Redistribution weakens derivative obligations.', 'Derivative obligations usually matter on downstream transfer. If redistribution is prohibited, these clauses may be mostly dormant unless private modification or hosting creates a separate trigger.');
-    }
-
-    if (state.hosting === 'S0' && state.network !== 'None') {
-      add('conflicts', 'No Hosted Service conflicts with Network Reciprocity.', 'Network obligations may be irrelevant, redundant, or confusing when hosted use is restricted.');
-    }
-    if (['S0', 'S1'].includes(state.hosting) && state.attribution === 'A5') {
-      add('redundancies', 'Network Attribution Notice may be dormant or internal-only.', 'A5 assumes network-visible attribution. With no hosted service or internal-only hosting, the notice may never be visible to external users.');
-    }
-    if (state.hosting === 'S1' && state.network !== 'None') {
-      add('redundancies', 'Internal Hosting narrows network reciprocity.', 'Network reciprocity modules normally address external remote users. Internal-only hosting may make those obligations less useful or harder to explain.');
     }
     if (state.hosting === 'S3' && state.network === 'N3') {
       add('risks', 'Named-customer hosting with public API notice needs review.', 'S3 limits hosting to controlled customer deployments, while N3 assumes public-facing API notice duties. Review whether the notice belongs in each named-customer environment.');
@@ -1496,7 +1695,7 @@ export default function App() {
     if (state.core === 'C3' && state.education.includes('SC')) {
       add('conflicts', 'View-Only Core conflicts with student copying.', 'Student copying creates reproduction rights that exceed a strict inspection-and-viewing baseline.');
     }
-    if (state.core === 'C3' && ['P1', 'P2', 'P4'].includes(state.patent)) {
+    if (state.core === 'C3' && (['P1', 'P2'].includes(state.patent) || state.patentDefense.includes('P4'))) {
       add('risks', 'View-Only Core with patent grant needs review.', 'A patent grant may be broader than the practical rights available under a strict view-only copyright core.');
     }
     if (state.core === 'C5' && ['MC', 'IC', 'SM', 'CW'].includes(state.commercial)) {
@@ -1508,6 +1707,15 @@ export default function App() {
     }
     if (state.ethics.length > 0) {
       add('risks', 'Ethical restrictions are field-of-use limits.', 'Ethical-use restrictions may increase review burden and may affect open-source classification.');
+    }
+    if (state.education.includes('ED') && state.education.includes('CE') && state.commercial === 'NC') {
+      add('risks', 'Education and course limits need scope labels.', 'ED + CE + NC should specify whether paid schools, independent teachers, bootcamps, YouTube courses, internal corporate training, and certification programs are inside or outside the grant.');
+    }
+    if (state.education.some((item) => item.startsWith('ED-')) && !state.education.includes('ED')) {
+      add('blocked', 'Education sub-scope requires ED.', 'ED-NP, ED-ACC, ED-IND, and ED-CORP only define the shape of an active educational permission. Select ED first.');
+    }
+    if (state.education.some((item) => item.startsWith('CE-')) && !state.education.includes('CE')) {
+      add('blocked', 'Course-extraction sub-scope requires CE.', 'CE-COMP and CE-CERT only refine an active course-extraction restriction. Select CE first.');
     }
     if (metadataIncomplete) {
       add('risks', 'Project metadata is incomplete.', 'Generated artifacts still contain placeholder-like fields for project, licensor, year, contact, or project URL details.');
@@ -1608,7 +1816,7 @@ export default function App() {
 
   const applyPreset = (presetName) => {
     markConfigurationChanged();
-    setState(PRESETS[presetName].state);
+    setState(normalizeLicenseState(PRESETS[presetName].state));
     setSelectedPreset(presetName);
     setLastIntentSummary(null);
   };
@@ -1624,7 +1832,7 @@ export default function App() {
       assumptions: intent.assumptions,
       changes: getStateDiff(state, intent.state),
     });
-    setState(intent.state);
+    setState(normalizeLicenseState(intent.state));
     setSelectedPreset(`Intent: ${intent.label}`);
   };
 
@@ -1632,7 +1840,7 @@ export default function App() {
     markConfigurationChanged();
     setSelectedPreset('Custom');
     setLastIntentSummary(null);
-    setState((prev) => ({ ...prev, [categoryId]: value }));
+    setState((prev) => normalizeLicenseState({ ...prev, [categoryId]: value }));
   };
 
   const handleCheckbox = (categoryId, value) => {
@@ -1640,13 +1848,13 @@ export default function App() {
     setSelectedPreset('Custom');
     setLastIntentSummary(null);
     setState((prev) => {
-      const current = prev[categoryId];
+      const current = prev[categoryId] ?? [];
 
       if (current.includes(value)) {
-        return { ...prev, [categoryId]: current.filter((item) => item !== value) };
+        return normalizeLicenseState({ ...prev, [categoryId]: current.filter((item) => item !== value) });
       }
 
-      return { ...prev, [categoryId]: [...current, value] };
+      return normalizeLicenseState({ ...prev, [categoryId]: [...current, value] });
     });
   };
 
@@ -1801,7 +2009,7 @@ export default function App() {
               value={variantImportInput}
               onChange={(event) => setVariantImportInput(event.target.value)}
               rows={3}
-              placeholder="LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE"
+              placeholder="LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE"
               className="mt-3 w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
             />
             <div className="mt-3 rounded-lg border border-cyan-200 bg-white/70 px-3 py-3 text-xs text-cyan-950">
@@ -1873,17 +2081,20 @@ export default function App() {
                         ? state[category.id] === option.val
                         : state[category.id].includes(option.val);
                     const summary = getOptionSummary(category.id, option.val);
+                    const ruleReason = getOptionRuleReason(state, option.val);
+                    const isDisabled = !isChecked && Boolean(ruleReason);
 
                     return (
                       <label
                         key={option.val}
-                        className={`flex items-start gap-3 p-2 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
+                        className={`flex items-start gap-3 p-2 rounded transition-colors ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${isChecked ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                       >
                         <input
                           type={category.type}
                           name={category.id}
                           value={option.val}
                           checked={isChecked}
+                          disabled={isDisabled}
                           onChange={() =>
                             category.type === 'radio'
                               ? handleRadio(category.id, option.val)
@@ -1898,6 +2109,11 @@ export default function App() {
                           <span className="mt-1 block text-xs leading-relaxed text-slate-500">
                             {summary}
                           </span>
+                          {ruleReason ? (
+                            <span className="mt-1 block text-xs font-medium leading-relaxed text-amber-700">
+                              Rule: {ruleReason}
+                            </span>
+                          ) : null}
                         </span>
                       </label>
                     );
@@ -2348,8 +2564,11 @@ export default function App() {
             <ul className="list-none pl-0 mb-8 space-y-3 text-sm text-slate-700">
               <li><strong>&quot;License&quot;</strong> shall mean the terms and conditions for use, reproduction, distribution, deployment, and related obligations as defined by this document.</li>
               <li><strong>&quot;Licensor&quot;</strong> shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.</li>
+              <li><strong>&quot;Contributor&quot;</strong> shall mean any Licensor or other person or Legal Entity that intentionally submits a Contribution for inclusion in the Work.</li>
+              <li><strong>&quot;Contribution&quot;</strong> shall mean any work of authorship, modification, patch, documentation, asset, or other material intentionally submitted for inclusion in the Work.</li>
               <li><strong>&quot;Legal Entity&quot;</strong> shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity.</li>
               <li><strong>&quot;You&quot; (or &quot;Licensee&quot;)</strong> shall mean an individual or Legal Entity exercising permissions granted by this License.</li>
+              <li><strong>&quot;Licensed Rights&quot;</strong> shall mean the copyright, patent, and other permissions expressly granted under this License, as limited by the selected Core and active Modules.</li>
               <li><strong>&quot;Work&quot;</strong> shall mean the work of authorship, whether in Source or Object form, made available under the License.</li>
               <li><strong>&quot;Derivative Work&quot;</strong> shall mean any work, whether in Source or Object form, that is based on or derived from the Work and for which the modifications represent, as a whole, an original work of authorship.</li>
               <li><strong>&quot;Source&quot; form</strong> shall mean the preferred form for making modifications, including software source code, documentation source, configuration files, and editable assets.</li>

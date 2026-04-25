@@ -1,6 +1,5 @@
 Prism License Framework
-Variant: PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
-SPDX-License-Identifier: LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
+Variant: PLF-1.0-C1-A2-MC-M2-R2-FD-MN-BS-AT-NS-BR-WL-S3-N3-P1-P4-CE-CE-COMP-RE-PR
 Terms and Conditions for Use, Reproduction, Distribution, and Deployment
 
 Work: Prism License Framework Generator
@@ -11,25 +10,25 @@ Project URL: https://github.com/ScientificAJ/prism-license-framework
 
 Human-Readable Deed
 This deed is non-normative. The legal code controls.
-- Attribution: Requires normal attribution and license notice retention when the work is shared.
-- Commercial Use: Blocks monetized or commercial use of the work.
+- Attribution: Requires attribution to be visible and prominent in public-facing use.
+- Commercial Use: Allows commercial use, subject to the rest of the selected restrictions.
 - Modification: People may create and distribute modified versions, subject to the rest of the license.
 - Redistribution: Redistribution is allowed, subject to the rest of the license.
 - Derivative Obligations: Modified files must say what changed and when.
-- Resale: No one may sell the work itself.
-- AI & Training: Prevents the work from being used to train or evaluate machine-learning systems.
+- Derivative Obligations: Modified forks must be clearly renamed or relabeled.
+- Resale: The work can be sold only as a bundled part of a larger offering.
+- AI & Training: AI training is outside the license unless the licensor separately approves it.
 - Ethical Restrictions: Blocks surveillance, profiling, and non-consensual biometric monitoring.
-- Ethical Restrictions: Blocks disinformation, synthetic manipulation, and deceptive influence campaigns.
 - Branding: Mostly restricts trademark and brand use except for basic origin references.
 - Branding Add-ons: Prevents downstream parties from white-labeling or disguising the origin.
-- Hosting & SaaS: Prevents the work from being offered as a hosted service.
+- Hosting & SaaS: Allows hosted use only for named customers or controlled client environments.
+- Network Reciprocity: Hosted deployments must publish clear legal and operator notices for the service.
 - Patents: Grants a limited patent license tied to the work and terminates on patent aggression.
 - Patent Defense Add-ons: Suspends patent rights if the licensee launches offensive patent claims around the work.
 - Education & Research: Prevents turning the work into a competing commercial course or curriculum.
 - Education & Research: Blocks courses or curricula that compete with the licensor’s educational offering.
-- Education & Research: Blocks certification, credential, exam, or assessment extraction.
+- Education & Research: Allows non-commercial research reuse, adaptation, and study.
 - Compliance & Governance: Requires privacy-law compliance when the work processes personal data.
-- Compliance & Governance: Requires a security review before high-risk deployment.
 
 By exercising any permissions granted herein, You accept and agree to be bound by the terms and conditions of this License. If You do not agree to these terms, You are not granted any rights to the Work and must immediately cease all use, distribution, and deployment.
 
@@ -50,9 +49,9 @@ By exercising any permissions granted herein, You accept and agree to be bound b
 Subject to the terms and conditions of this License, Licensor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form. The foregoing grant is expressly made subject to, and conditioned upon, Your strict compliance with all active Modules enumerated in Section 3.
 
 3. Conditions and Specific Restrictions
-Attribution (A): As a material condition of this License, You must retain, in all copies or substantial portions of the Work or Derivative Works distributed by You, all copyright, patent, trademark, and attribution notices from the Source form of the Work. You must provide a copy of this License (or a URI/hyperlink referring to it) to any recipients of the Work. You may not use the attribution to implicitly or explicitly assert or imply any connection with, sponsorship by, or endorsement by the Licensor.
+Prominent Attribution (A2): Any public distribution, hosted deployment, or public-facing presentation of the Work or a Derivative Work must include a prominent and reasonably visible attribution credit to the Licensor in user-facing documentation, product credits, or a comparable notice location.
 
-Non-Commercial Only (NC): Notwithstanding any other provision, no right or license is granted to exercise the Licensed rights for any Commercial Purpose. "Commercial Purpose" shall mean any use primarily intended for or directed toward commercial advantage or private monetary compensation, including but not limited to the sale of the Work or the incorporation of the Work into a commercially distributed product or service.
+Commercial Use Allowed (MC): You are explicitly authorized to exercise the granted rights for Commercial Purposes, provided that such utilization remains strictly subordinate to, and compliant with, all other Modules enumerated herein.
 
 Public Modification Allowed (M2): You are expressly permitted to create, reproduce, and publicly distribute Derivative Works, subject strictly to the conditions, obligations, and limitations established by all other active Modules herein.
 
@@ -60,19 +59,21 @@ Redistribution Allowed (R2): You are permitted to distribute the Work and any au
 
 File Difference Disclosure (FD): You must cause any modified files to carry prominent notices stating that You changed the files, detailing the specific substantive alterations made, and indicating the exact dates of such modifications.
 
-No Resale (NR): You shall not sell, lease, rent, or bundle the Work (or authorized Derivative Works) for any direct or indirect monetary fee. The Work may not be repackaged or sublicensed in any transaction where the Work itself constitutes the primary standalone value.
+Modified Naming Required (MN): If You distribute or publicly deploy a Derivative Work, You must apply a differentiated project name, version label, or release identifier sufficient to prevent confusion between the original Work and the modified version.
 
-No AI Training (NT): Notwithstanding any other provision of this License, no right or license is granted to utilize, ingest, scrape, or process the Work, or any portions thereof, for the purpose of training, fine-tuning, evaluating, benchmarking, distilling, or otherwise developing artificial intelligence systems, large language models, neural networks, or machine learning algorithms.
+Bundled Resale Only (BS): Resale is permitted only when the Work or an authorized Derivative Work is bundled as a non-primary component within a larger product, system, or service offering, and not as the primary standalone value being sold.
+
+AI Training by Permission Only (AT): Any utilization of the Work for machine learning or artificial intelligence training, evaluation, or benchmarking is entirely outside the scope of this License and requires separate, prior, and explicit written consent from the Licensor.
 
 No Surveillance Use (NS): You shall not utilize the Work in the development or deployment of systems intended for mass public surveillance, biometric identification without explicit individual consent, predictive policing, unlawful digital tracking, or systemic population profiling.
-
-No Disinformation Systems (DS): You shall not utilize the Work to generate, coordinate, automate, optimize, or materially support deceptive propaganda, fraudulent impersonation, synthetic influence operations, or large-scale disinformation campaigns.
 
 Branding Restricted (BR): This License does not grant permission to use the trade names, trademarks, service marks, logos, or domain names of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and reproducing the content of the NOTICE file or attribution headers.
 
 No White-Label Rebranding (WL): You may not remove, replace, conceal, or materially subordinate the origin identity of the Work in order to market the Work or an authorized Derivative Work as if it were originally created by You, except where separate written branding permission has been granted by the Licensor.
 
-No Hosted Service Use (S0): You shall not deploy, host, or otherwise make the functionality of the Work available to third parties over a network as a hosted service, including but not limited to Software-as-a-Service (SaaS), Platform-as-a-Service (PaaS), Application Service Provider (ASP) models, or remote API access.
+Named-Customer Hosting Only (S3): You may host the Work for external customers only in dedicated or named-customer deployments, pilot environments, or controlled client-specific instances. General public multi-tenant hosted service operation is prohibited absent further permission.
+
+Public API Notice (N3): Any network-accessible deployment of the Work must provide reasonably accessible documentation identifying the governing License variant, the operator identity, and any material restrictions affecting user-facing API or service use rights.
 
 Limited Patent License Granted (P1): Subject to the terms and conditions of this License, Licensor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by Licensor that are necessarily infringed by their contribution(s) alone or by combination of their contribution(s) with the Work. If You institute patent litigation against any entity alleging that the Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.
 
@@ -82,11 +83,9 @@ Course Extraction Restricted (CE): You shall not extract, adapt, or repackage th
 
 Competing Course Ban (CE-COMP): You shall not use the Work as the substantial basis for a course, curriculum, training program, or tutorial product that competes with the Licensor's own educational offerings or materially substitutes for obtaining the Work from the Licensor.
 
-Certification Extraction Ban (CE-CERT): You shall not use the Work as the substantial basis for a paid certificate, credential, examination, assessment bank, or certification-preparation program without separate written permission from the Licensor.
+Research Reuse Allowed (RE): Non-commercial academic and independent research use of the Work, including adaptation, experimentation, benchmarking, and publication of research findings, is expressly permitted so long as such use remains otherwise compliant with the active Modules of this License.
 
 Privacy Compliance Duty (PR): If You process personal data using the Work or an authorized Derivative Work, You must do so in material compliance with applicable privacy, data protection, and consumer disclosure laws, including maintaining a lawful basis where required.
-
-Security Review Before High-Risk Deployment (SR): You shall not deploy the Work in high-risk or safety-sensitive environments unless You have conducted and documented a reasonable security and misuse review proportionate to the foreseeable impact of such deployment.
 
 4. General Provisions
 4.1 Reservation of Rights: All rights not expressly and unambiguously granted by the Licensor herein are entirely reserved. This License does not transfer or assign any ownership of copyrights, patents, trademarks, or other intellectual property rights.
@@ -95,8 +94,3 @@ Security Review Before High-Risk Deployment (SR): You shall not deploy the Work 
 4.4 Limitation of Liability: In no event and under no legal theory, whether in tort, contract, or otherwise, unless required by applicable law or agreed to in writing, shall any Licensor or Contributor be liable to You for damages arising as a result of this License or out of the use or inability to use the Work.
 4.5 Severability: If any provision of this License is held to be invalid, illegal, or unenforceable, such invalidity shall not affect the enforceability of the remaining provisions, which shall remain in force to the maximum extent permitted by law.
 4.6 Entire Agreement: This License constitutes the entire agreement between the parties with respect to the Work except where the Licensor has separately granted written commercial, hosting, trademark, or patent permissions.
-
-Appendix A (Non-Normative)
-
-This repository's license text was generated with the Prism License Framework itself.
-That is intentional.

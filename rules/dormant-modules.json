@@ -1,0 +1,31 @@
+{
+  "schema": "plf-rules/v1",
+  "description": "Pairings that become dormant, redundant, or operationally confusing because their trigger is blocked elsewhere.",
+  "rules": {
+    "S0": {
+      "dormantWith": ["A5", "N1", "N2", "N3", "N4", "N5"],
+      "title": "Network duties are dormant under no hosted service use.",
+      "message": "The network trigger is blocked by S0."
+    },
+    "S1": {
+      "dormantWith": ["A5", "N3", "N4"],
+      "title": "Network notices become internal-only under S1.",
+      "message": "The notice may still be useful internally, but it no longer reaches public hosted users."
+    },
+    "R0": {
+      "dormantWith": ["A3", "SA", "SD", "FD", "MN", "OC"],
+      "title": "Distribution duties are dormant under no redistribution.",
+      "message": "The downstream distribution trigger is blocked by R0."
+    },
+    "M0": {
+      "dormantWith": ["SA", "SD", "FD", "MN", "OC"],
+      "title": "Derivative duties are dormant under no modification.",
+      "message": "The derivative-work trigger is blocked by M0."
+    },
+    "M1": {
+      "dormantWith": ["SA", "SD", "MN", "OC"],
+      "title": "Public derivative duties are dormant under private-only modification.",
+      "message": "These duties need a public derivative distribution or deployment trigger."
+    }
+  }
+}

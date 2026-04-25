@@ -40,12 +40,13 @@ That is why the compatibility matrix should be reviewed alongside the selected v
 
 ## 4. How should we think about patents?
 
-Patent treatment is configurable. Some variants provide no explicit patent grant. Others provide limited or broader grants with retaliation or defensive-suspension mechanics.
+Patent treatment is configurable. Some variants provide no explicit patent grant. Others provide limited or broader grants with retaliation or defensive-suspension mechanics. `P4` is now treated as a defensive add-on, not a standalone patent posture, so it should be paired with `P1`, `P2`, or `P3`.
 
 Patent review should focus on:
 
 - whether a patent license is granted at all
 - whether patent retaliation is triggered by offensive claims
+- whether defensive suspension is layered on top of an actual patent grant or non-assert
 - whether the business expects Apache-style patent comfort
 
 The UI should treat no-patent and no-explicit-patent variants as high-friction for enterprise adoption.

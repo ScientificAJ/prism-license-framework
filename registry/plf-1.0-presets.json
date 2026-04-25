@@ -11,20 +11,20 @@
     {
       "name": "PLF-Open",
       "code": "PLF-1.0-C1-A-MC-M2-R2-FR-OA-BN-S2-P1-ED-RE-CL",
-      "status": "draft",
-      "legalTextHash": null
+      "status": "canonical",
+      "legalTextHash": "a90ce384187455a425a5d468510aecfb12af8a79c12ebc8d0e62e12afa3d2ddd"
     },
     {
       "name": "PLF-Balanced",
-      "code": "PLF-1.0-C1-A2-MC-M2-R2-FD-MN-BS-AT-NS-BR-S3-N3-P1-CE-RE-PR",
-      "status": "draft",
-      "legalTextHash": null
+      "code": "PLF-1.0-C1-A2-MC-M2-R2-FD-MN-BS-AT-NS-BR-WL-S3-N3-P1-P4-CE-CE-COMP-RE-PR",
+      "status": "canonical",
+      "legalTextHash": "974846ebee17830d3cd53864eed112b0d7142c13ae9a16ac2c6bbc7fd85c90c5"
     },
     {
       "name": "PLF-Protected",
-      "code": "PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-S0-CE-PR-SR",
-      "status": "draft",
-      "legalTextHash": null
+      "code": "PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR",
+      "status": "canonical",
+      "legalTextHash": "8201db52523286b6f7033d7e93333ad7da0b904f84450221dcce8b1587bb1761"
     }
   ]
 }

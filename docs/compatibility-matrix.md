@@ -44,7 +44,7 @@ This is where outbound friction rises quickly. Resale controls, SaaS restriction
 
 ### SaaS Products
 
-Hosted-service use is its own review category. `S0`, `S1`, `S3`, `S4`, `A5`, and `N1` through `N5` should be reviewed together because network obligations can become redundant, confusing, or impossible to trigger when hosted use is restricted.
+Hosted-service use is its own review category. `S0`, `S1`, `S3`, `S4`, `A5`, and `N1` through `N5` should be reviewed together because network obligations can become redundant, confusing, or impossible to trigger when hosted use is restricted. The generator now enforces the highest-risk pairings through `rules/conflicts.json` and `rules/dormant-modules.json` so new variants do not accidentally combine blocked hosting with hosted-user duties.
 
 ### AI Company Use
 
@@ -60,6 +60,7 @@ When legal reviews a PLF variant, they should answer:
 4. Are any reciprocal modules active?
 5. Are patent, branding, AI, or SaaS modules active?
 6. Is the team using a canonical preset or a custom one-off variant?
+7. Are add-on modules such as `P4`, `WL`, `ED-*`, or `CE-*` paired with the base module that gives them legal effect?
 
 If the answer to item 6 is “custom one-off variant,” expect review time to go up materially.
 

@@ -10,7 +10,7 @@ The Prism License Framework Generator is a post-AI era licensing tool for digita
 
 PLF bridges the gap between permissive and closed licensing by combining a core grant of rights with optional restriction and obligation modules. Instead of choosing one rigid license for every business model, creators assemble a variant that matches their commercial, distribution, hosting, network reciprocity, compliance, AI-training, branding, and derivative-work policy.
 
-The current generator ships with an expanded option library: every category exposes at least five selectable positions. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, review findings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
+The current generator ships with an expanded option library across core legal factors and add-on modules. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, review findings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
 
 ## Why This Matters Now
 
@@ -36,7 +36,7 @@ PLF is designed to let a creator express positions traditional licenses struggle
 - `Commercial Use: YES`
 - `AI Training: NO`
 - `Hosting: Named customers only`
-- `Branding: No white-label rebranding`
+- `Branding: Restricted + no white-label add-on`
 - `Resale: Bundled only`
 
 This is not an edge case. It is rapidly becoming a mainstream need.
@@ -74,7 +74,7 @@ The generator now treats restrictive combinations as review events, not just har
 It flags:
 
 - variants that are source-available but not necessarily OSI-open-source compatible
-- no explicit patent grant selections
+- missing patent grants and unpaired patent-defense add-ons
 - commercial use paired with AI-training restrictions
 - ethical field-of-use restrictions
 - SaaS and managed-service restrictions
@@ -117,7 +117,7 @@ This approach is more maintainable than trying to encode every policy choice int
 Example variant codes look like:
 
 ```text
-PLF-1.0-C1-A-NC-M2-R2-NR-NT-NS-BR-CE
+PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
 ```
 
 In practice, that means the generator can serve as a policy assembly interface for digital products, templates, software tools, educational material, and other source-available works.
@@ -133,7 +133,7 @@ Until a PLF variant is formally added to the SPDX License List, the most practic
 Example source header:
 
 ```text
-SPDX-License-Identifier: LicenseRef-PLF-1.0-C1-A-NC-M2-R2-NR-NT-NS-BR-CE
+SPDX-License-Identifier: LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
 ```
 
 Example `package.json` metadata for a custom or unlisted license:
@@ -157,13 +157,15 @@ For PLF-based projects, the safest current pattern is:
 
 ## Preset Anchors
 
-To reduce legal-review sprawl, the generator now anchors users to three named starting points. In the current registry, these presets are still marked `draft` until their generated legal text is hash-pinned and frozen:
+To reduce legal-review sprawl, the generator now anchors users to three named starting points. The current registry marks these presets `canonical`, and each one has an exact generated `presets/*.LICENSE` artifact plus a SHA-256 hash pinned in `registry/plf-1.0-presets.json`:
 
 - `PLF-Open`: lower-friction sharing and commercial adoption
 - `PLF-Balanced`: source-available default with more explicit downstream guardrails
 - `PLF-Protected`: creator-protective default with no AI training and tighter commercial controls
 
 The operational goal is simple: if most adopters stay close to these presets, legal teams can review a small number of recognizable variants instead of treating every generated combination as a brand-new license.
+
+Run `npm run generate:presets` after changing legal text or preset state, then `npm run test:presets` to confirm the registry hashes still match the generated artifacts.
 
 ## Trust and Translation Layers
 
@@ -181,6 +183,7 @@ The generator UI also now includes:
 - pasteable variant-code import for `PLF-1.0-...` and `LicenseRef-PLF-1.0-...` identifiers
 - project metadata fields for project name, licensor, copyright year, contact, and project URL
 - severity-split findings for blocked contradictions, conflicts, redundancies, review risks, and helpful notes
+- formal compatibility rules in `rules/` for conflicts, dormancy, requirements, redundancies, and review escalations
 - expanded conflict and risk warnings for combinations likely to confuse reviewers
 - preset-drift tracking with category-level preset/current/review-impact rows
 - source-available classification and "why this may not be open source" reasoning per variant
@@ -197,13 +200,13 @@ The generator UI also now includes:
 Every generated variant has a copyable code such as:
 
 ```text
-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE-PR-SR
+PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
 ```
 
 The UI can also read pasted identifiers such as:
 
 ```text
-LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-BR-S0-CE-PR-SR
+LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
 ```
 
 Paste the code into the "Paste a variant code" panel and the generator reconstructs the selected core, radio factors, and checkbox modules. Unknown tokens are rejected instead of silently ignored, because a license-code importer should not pretend to understand future or malformed clauses.
@@ -231,7 +234,7 @@ If a hard contradiction is detected, exports are locked until the user acknowled
 - [Compatibility matrix](./docs/compatibility-matrix.md)
 - [Dear Corporate Legal FAQ](./docs/legal-faq.md)
 - [Versioning policy](./docs/versioning-policy.md)
-- [PLF 1.0 draft preset registry](./registry/plf-1.0-presets.json)
+- [PLF 1.0 canonical preset registry](./registry/plf-1.0-presets.json)
 
 ## Running Locally
 
@@ -256,6 +259,13 @@ npm run dev
 
 ```bash
 npm run build
+```
+
+### Regenerate canonical preset artifacts
+
+```bash
+npm run generate:presets
+npm run test:presets
 ```
 
 The production build is emitted to `dist/`.

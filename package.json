@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "generate:presets": "node scripts/generate-preset-artifacts.mjs",
+    "test:presets": "node scripts/check-preset-hashes.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

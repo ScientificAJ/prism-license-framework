@@ -1,0 +1,16 @@
+{
+  "schema": "plf-rules/v1",
+  "description": "Non-blocking combinations that deserve human review because the policy line is subtle.",
+  "rules": {
+    "educationPaidUseBoundary": {
+      "requiresAll": ["ED", "CE", "NC"],
+      "title": "Educational reuse and paid course boundaries need explicit scope.",
+      "message": "Clarify paid teachers, paid schools, bootcamps, YouTube courses, internal corporate training, and certification programs."
+    },
+    "protectedPatentComfort": {
+      "requiresAll": ["NC", "S0", "P1"],
+      "title": "Protected preset includes patent comfort without opening commercial or SaaS rights.",
+      "message": "P1 improves enterprise review comfort while NC, S0, NT, and resale limits preserve the creator-protective posture."
+    }
+  }
+}

@@ -39,3 +39,5 @@ Registry entries must distinguish final hashes from placeholders:
 - Use `status: "canonical"` only for finalized legal text with a real SHA-256 hash.
 - Use `status: "draft"` and `legalTextHash: null` for preset entries that still need final text regeneration.
 - Generated custom entries should record `hashInput: "exact LICENSE text UTF-8"` so another reviewer can reproduce the hash.
+
+For this repository, regenerate canonical preset artifacts with `npm run generate:presets` and verify them with `npm run test:presets` before publishing.

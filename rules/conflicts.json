@@ -1,0 +1,41 @@
+{
+  "schema": "plf-rules/v1",
+  "description": "Hard module-pair conflicts that should be blocked or explicitly reviewed before export.",
+  "rules": {
+    "P0": {
+      "conflictsWith": ["P4"],
+      "title": "No patent grant conflicts with defensive patent suspension.",
+      "message": "P4 suspends patent rights only if patent rights exist first."
+    },
+    "S0": {
+      "conflictsWith": ["A5", "N1", "N2", "N3", "N4", "N5"],
+      "title": "No Hosted Service conflicts with network-triggered duties.",
+      "message": "Hosted-service duties are impossible or misleading when hosted service use is prohibited."
+    },
+    "S1": {
+      "conflictsWith": ["N1", "N2", "N5"],
+      "title": "Internal Hosting conflicts with external network obligations.",
+      "message": "External hosted source offers, service modification disclosure, and hosted export rights do not fit an internal-only hosting grant."
+    },
+    "R0": {
+      "conflictsWith": ["A3", "SA", "SD", "FD", "MN", "OC"],
+      "title": "No Redistribution conflicts with distribution-triggered duties.",
+      "message": "Distribution-triggered duties should not be active when redistribution is prohibited."
+    },
+    "R1": {
+      "conflictsWith": ["SA", "SD", "MN", "OC"],
+      "title": "Unmodified Redistribution conflicts with derivative distribution duties.",
+      "message": "R1 permits exact copies only, while these duties assume modified downstream distributions."
+    },
+    "M0": {
+      "conflictsWith": ["SA", "SD", "FD", "MN", "OC"],
+      "title": "No Modification conflicts with derivative obligations.",
+      "message": "Derivative-work obligations should not be active when creating derivatives is prohibited."
+    },
+    "M1": {
+      "conflictsWith": ["SA", "SD", "MN", "OC"],
+      "title": "Private Modification conflicts with public derivative duties.",
+      "message": "Private-only modification does not support public share-alike, source disclosure, naming, or change-back triggers."
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema": "plf-rules/v1",
+  "description": "Add-on modules that only make sense when another module is active first.",
+  "rules": {
+    "P4": {
+      "requiresAny": ["P1", "P2", "P3"],
+      "title": "Defensive patent suspension requires patent comfort first.",
+      "message": "Select P1, P2, or P3 before adding P4."
+    },
+    "ED-NP": {
+      "requiresAny": ["ED"],
+      "title": "ED-NP requires Educational Reuse Allowed.",
+      "message": "Select ED before adding education scope refinements."
+    },
+    "ED-ACC": {
+      "requiresAny": ["ED"],
+      "title": "ED-ACC requires Educational Reuse Allowed.",
+      "message": "Select ED before adding education scope refinements."
+    },
+    "ED-IND": {
+      "requiresAny": ["ED"],
+      "title": "ED-IND requires Educational Reuse Allowed.",
+      "message": "Select ED before adding education scope refinements."
+    },
+    "ED-CORP": {
+      "requiresAny": ["ED"],
+      "title": "ED-CORP requires Educational Reuse Allowed.",
+      "message": "Select ED before adding education scope refinements."
+    },
+    "CE-COMP": {
+      "requiresAny": ["CE"],
+      "title": "CE-COMP requires Course Extraction Restricted.",
+      "message": "Select CE before adding course-extraction scope refinements."
+    },
+    "CE-CERT": {
+      "requiresAny": ["CE"],
+      "title": "CE-CERT requires Course Extraction Restricted.",
+      "message": "Select CE before adding course-extraction scope refinements."
+    }
+  }
+}

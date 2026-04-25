@@ -1,6 +1,5 @@
 Prism License Framework
 Variant: PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
-SPDX-License-Identifier: LicenseRef-PLF-1.0-C1-A-NC-M2-R2-FD-NR-NT-NS-DS-BR-WL-S0-P1-P4-CE-CE-COMP-CE-CERT-PR-SR
 Terms and Conditions for Use, Reproduction, Distribution, and Deployment
 
 Work: Prism License Framework Generator
@@ -95,8 +94,3 @@ Security Review Before High-Risk Deployment (SR): You shall not deploy the Work 
 4.4 Limitation of Liability: In no event and under no legal theory, whether in tort, contract, or otherwise, unless required by applicable law or agreed to in writing, shall any Licensor or Contributor be liable to You for damages arising as a result of this License or out of the use or inability to use the Work.
 4.5 Severability: If any provision of this License is held to be invalid, illegal, or unenforceable, such invalidity shall not affect the enforceability of the remaining provisions, which shall remain in force to the maximum extent permitted by law.
 4.6 Entire Agreement: This License constitutes the entire agreement between the parties with respect to the Work except where the Licensor has separately granted written commercial, hosting, trademark, or patent permissions.
-
-Appendix A (Non-Normative)
-
-This repository's license text was generated with the Prism License Framework itself.
-That is intentional.
