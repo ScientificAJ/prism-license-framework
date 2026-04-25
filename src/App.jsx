@@ -1945,7 +1945,7 @@ export default function App() {
             <Info size={18} /> Configure Factors
           </h2>
           <p className="mb-6 text-sm text-slate-500">
-            {FACTOR_COUNT} factors and {OPTION_COUNT} selectable positions. Each factor now includes at least five choices.
+            {FACTOR_COUNT} factors and {OPTION_COUNT} selectable positions, with add-ons split out where pairing rules matter.
           </p>
 
           <div className="mb-8 rounded-xl border border-slate-200 bg-white p-4">
