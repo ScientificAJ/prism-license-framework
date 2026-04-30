@@ -14,6 +14,8 @@ The current generator ships with an expanded option library across core legal fa
 
 ## Quick Demo
 
+See PLF go from creator intent to license modules to risk review to an export-ready `LICENSE`.
+
 ![PLF generator demo showing intent selection, module adjustment, risk review, and LICENSE export](./docs/assets/plf-demo.gif)
 
 ## Why This Matters Now
