@@ -18,6 +18,8 @@ See PLF go from creator intent to license modules to risk review to an export-re
 
 ![PLF generator demo showing intent selection, module adjustment, risk review, and LICENSE export](./docs/assets/plf-demo.gif)
 
+New to PLF? Start with the [beginner tutorial](./tutorial.md).
+
 ## Why This Matters Now
 
 Developers are no longer only asking:
