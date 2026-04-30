@@ -12,6 +12,10 @@ PLF bridges the gap between permissive and closed licensing by combining a core 
 
 The current generator ships with an expanded option library across core legal factors and add-on modules. Some categories are single-choice factors, while others are cumulative checkbox modules that intentionally stack obligations. The UI includes plain-language clause explanations, review findings, legal-risk badges, preset-drift tracking, exports, and dynamic consequence feedback.
 
+## Quick Demo
+
+![PLF generator demo showing intent selection, module adjustment, risk review, and LICENSE export](./media/plf-demo.gif)
+
 ## Why This Matters Now
 
 Developers are no longer only asking:
