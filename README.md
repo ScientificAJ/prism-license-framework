@@ -14,7 +14,7 @@ The current generator ships with an expanded option library across core legal fa
 
 ## Quick Demo
 
-![PLF generator demo showing intent selection, module adjustment, risk review, and LICENSE export](./media/plf-demo.gif)
+![PLF generator demo showing intent selection, module adjustment, risk review, and LICENSE export](./docs/assets/plf-demo.gif)
 
 ## Why This Matters Now
 
